@@ -1,19 +1,4 @@
---collapse building physic and vfx display
--- make moel and group it then nme each piece
-local building = script.parent
-
-local.fuction = collapse()
-for-, part in ipairs(building:GetDescendants()) do 
-  if part:isA("Basepart") then 
-    part.anchored = false
-      end
-  end
-end
-
-wait(5 )
-collapse()
-
--- or other option
+--building destruction mechanic
 
 local building = script.parent
 
@@ -21,3 +6,12 @@ local.fuction = collapse
 local.function = collapse()
 local building("model")
   if ("damage") then part.anchored = false
+  end
+end
+
+local vfx = script.parent
+local.function = (vfx.id) = "id///("id number for vfx")
+play.vfx = ("id number")
+
+end
+
