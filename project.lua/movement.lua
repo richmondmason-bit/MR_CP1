@@ -4,6 +4,7 @@
 -- make the hitbox for damage outputs 
 -- fixate camera to be anchored and welded to the head
 -- go to starterplayerscripts and change value to lockFirstPerson
+-- check if player is able to move during animation and script is playing.
 
 
 -- LocalScript: PlayerMovementAndCombat (vault triggered by Space)
@@ -136,7 +137,7 @@ local function dropkick()
 	local track = humanoid:LoadAnimation(kickAnim)
 	track:Play()
 
-	local duration = 1
+	local duration = 2
 	local hitZombies = {}
 	local startTime = tick()
 
