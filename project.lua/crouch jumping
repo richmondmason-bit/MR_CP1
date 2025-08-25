@@ -1,17 +1,35 @@
---building destruction mechanic
+-- script for heads movement to be in sync with camera 
+-- make custom animation note; make the head jerk as little as possible
+-- put this local script inside of startercharacterscripts
 
-local building = script.parent
+local p = game.Players.LocalPlayer
+local c = p.Character or p.CharacterAdded:Wait()
+local cam = game.Workspace.CurrentCamera
+local m = p:GetMouse()
 
-local.fuction = collapse
-local.function = collapse()
-local building("model")
-  if ("damage") then part.anchored = false
-  end
+cam.FieldOfView = 80
+c.Humanoid.AutoRotate = false
+
+--- Hide the player's accessories in first person, or they will cover our screen!
+for i,v in pairs(c:GetChildren()) do
+	if v:IsA("Accessory") then
+		v:Destroy()
+	end
 end
 
-local vfx = script.parent
-local.function = (vfx.id) = "id///("id number for vfx")
-play.vfx = ("id number")
+game:GetService("RunService").RenderStepped:Connect(function(delta)
+	if c and c:FindFirstChild("Head") then
+		
+		local mouse_position = Vector2.new(m.X,m.Y)
+		
+		---- Calculate how far from the centre of the screen the player's mouse is
+		local screen_size = cam.ViewportSize
+		local mouse_centre_offset = (mouse_position/screen_size)-Vector2.new(0.5,0.5)
+		
+		local mouse_camera_rotation = CFrame.Angles(-mouse_centre_offset.Y,-mouse_centre_offset.X,0)
+		
+		cam.CFrame = c.Head.CFrame*CFrame.new(0,0.25,-0.375)*mouse_camera_rotation
+	end
+end)
 
-end
 
