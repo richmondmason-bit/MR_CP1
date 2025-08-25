@@ -1,0 +1,7 @@
+-- fov script TAKE THIS OUT
+
+  local camera = game.Workspace.CurrentCamera
+    local targetFOV = 70 -- Replace with your desired FOV value (e.g., 70, 90, 120)
+
+    -- Set the FOV to the desired value when the script runs
+    camera.FieldOfView = targetFOV
