@@ -1,7 +1,7 @@
 --This is the sliding mechanic in fathom
 --all scripts go inside of StarterPlayerScripts
 --make a dummy and all enemies named "zombie" with a humanoid+ humanoidrootpart for damage and hitboxes
-
+-- make the hitbox for 
 
 
 -- LocalScript: PlayerMovementAndCombat (vault triggered by Space)
