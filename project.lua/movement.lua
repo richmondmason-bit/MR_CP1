@@ -1,7 +1,9 @@
 --This is the sliding mechanic in fathom
 --all scripts go inside of StarterPlayerScripts
 --make a dummy and all enemies named "zombie" with a humanoid+ humanoidrootpart for damage and hitboxes
--- make the hitbox for 
+-- make the hitbox for damage outputs 
+-- fixate camera to be anchored and welded to the head
+-- go to starterplayerscripts and change value to lockFirstPerson
 
 
 -- LocalScript: PlayerMovementAndCombat (vault triggered by Space)
