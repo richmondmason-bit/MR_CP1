@@ -1,1 +1,1 @@
-print("Hey BBG")
+print("test")
