@@ -1,31 +1,56 @@
 # FL class Shopping List Manager
 
-#Put your shopping list variable here
+# Initialize your shopping list variable
+shopping_list = []
 
 while True:
-    print("\nWhat do you want in your shopping list?")
-    print("1 = add")
-    print("2 = remove")
-    print("3 = select")
-    print("4 = quit")
+    print("\nWhat do you want to do with your shopping list?")
+    print("1 = Add item")
+    print("2 = Remove item")
+    print("3 = Show list")
+    print("4 = Quit")
 
     choice = input("Enter choice (1/2/3/4): ")
 
     if choice == "4":
         print("Goodbye!")
         break
-    if choice not in ["1", "2", "3", "4"]:
+    elif choice not in ["1", "2", "3"]:
         print("Invalid choice, try again.")
         continue
-    elif choice == 1:
-        task = input("Enter task to add")
-        choice.append(task)
-        print("task added")
-    elif choice == 2:
-        task = input("Enter to remove task")
-        if task in choice
+
+    elif choice == "1":
+        item = input("Enter item to add: ")
+        shopping_list.append(item)
+        print(f"'{item}' added to the list.")
+
+    elif choice == "2":
+        item = input("Enter item to remove: ")
+        if item in shopping_list:
+            shopping_list.remove(item)
+            print(f"'{item}' removed from the list.")
+        else:
+            print(f"'{item}' not found in the list.")
+
+    elif choice == "3":
+        if shopping_list:
+            print("\nYour shopping list:")
+            for i, item in enumerate(shopping_list, start=1):
+                print(f"{i}. {item}")
+        else:
+            print("Your shopping list is empty.")
 
 
+
+        
+
+
+
+
+ 
+
+
+    
         
 
 
