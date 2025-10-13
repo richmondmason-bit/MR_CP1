@@ -1,45 +1,71 @@
-
-#FUNCTION print_board(board)
-    #FOR each row IN board
-        #PRINT row with separators
-        #PRINT separator line
-
-#FUNCTION check_winner(board, player)
-    #FOR i FROM 0 TO 2
-        #IF all cells in row i are player
-            #RETURN True
-        #IF all cells in column i are player
-           # RETURN True
-    #IF all cells in main diagonal are player
-        #RETURN True
-    #IF all cells in anti-diagonal are player
-        #RETURN True
-    #RETURN False
-
-#FUNCTION is_full(board)
-    #RETURN True IF all cells are not empty
-
-#FUNCTION tictactoe()
-    #INITIALIZE 3x3 board with empty cells
-    #SET current_player TO "X"
-    #LOOP forever
-        #CALL print_board(board)
-        #TRY
-            #GET row and col input from user
-            #IF board[row][col] is not empty
-                #PRINT error and CONTINUE
-        #EXCEPT invalid input
-            #PRINT error and CONTINUE
-        #SET board[row][col] TO current_player
-        #IF check_winner(board, current_player)
-            #CALL print_board(board)
-            #PRINT winner message
-            #BREAK loop
-        #IF is_full(board)
-            #CALL print_board(board)
-            #PRINT draw message
-            #BREAK loop
-        #SWITCH current_player between "X" and "O"
-
-#IF this file is main program
-    #CALL tictactoe()
+#Tic-Tac-Toe game
+board = {
+    "top-L": " ", "top-M": " ", "top-R": " ",
+    "mid-L": " ", "mid-M": " ", "mid-R": " ",
+    "low-L": " ", "low-M": " ", "low-R": " "
+}
+print("Welcome to Tic-Tac-Toe!")
+print("Positions are: top-L, top-M, top-R, mid-L, mid-M, mid-R, low-L, low-M, low-R")
+print("Player X goes first.")
+current_player = "X"
+move_count = 0
+while True:
+    print()
+    print(f"{board['top-L']}|{board['top-M']}|{board['top-R']}")
+    print("-+-+-")
+    print(f"{board['mid-L']}|{board['mid-M']}|{board['mid-R']}")
+    print("-+-+-")
+    print(f"{board['low-L']}|{board['low-M']}|{board['low-R']}")
+    print()
+    move = input(f"Player {current_player}, enter your move: ")
+    if move not in board:
+        print("Invalid position. Please try again.")
+        continue
+    if board[move] != " ":
+        print("That spot is already taken. Please try again.")
+        continue
+    board[move] = current_player
+    move_count += 1
+    win = False
+    if board["top-L"] == current_player and board["top-M"] == current_player and board["top-R"] == current_player:
+        win = True
+    if board["mid-L"] == current_player and board["mid-M"] == current_player and board["mid-R"] == current_player:
+        win = True
+    if board["low-L"] == current_player and board["low-M"] == current_player and board["low-R"] == current_player:
+        win = True
+    # Columns
+    if board["top-L"] == current_player and board["mid-L"] == current_player and board["low-L"] == current_player:
+        win = True
+    if board["top-M"] == current_player and board["mid-M"] == current_player and board["low-M"] == current_player:
+        win = True
+    if board["top-R"] == current_player and board["mid-R"] == current_player and board["low-R"] == current_player:
+        win = True
+    # Diagonals
+    if board["top-L"] == current_player and board["mid-M"] == current_player and board["low-R"] == current_player:
+        win = True
+    if board["top-R"] == current_player and board["mid-M"] == current_player and board["low-L"] == current_player:
+        win = True
+    if win:
+        print()
+        print(f"{board['top-L']}|{board['top-M']}|{board['top-R']}")
+        print("-+-+-")
+        print(f"{board['mid-L']}|{board['mid-M']}|{board['mid-R']}")
+        print("-+-+-")
+        print(f"{board['low-L']}|{board['low-M']}|{board['low-R']}")
+        print()
+        print(f"Player {current_player} wins! Congratulations!")
+        break
+    if move_count == 9:
+        print()
+        print(f"{board['top-L']}|{board['top-M']}|{board['top-R']}")
+        print("-+-+-")
+        print(f"{board['mid-L']}|{board['mid-M']}|{board['mid-R']}")
+        print("-+-+-")
+        print(f"{board['low-L']}|{board['low-M']}|{board['low-R']}")
+        print()
+        print("It's a tie!")
+        break
+    if current_player == "X":
+        current_player = "O"
+    else:
+        current_player = "X"
