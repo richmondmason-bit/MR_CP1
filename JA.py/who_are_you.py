@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 """
 Advanced terminal platformer (single-file).
-Features:
-- Scrolling levels
-- Player with momentum, jump, dash (melee), shoot
-- Ladders, platforms, powerups, checkpoints
-- Multiple enemy types + projectiles
-- Title/pause/restart screens
-- Score, lives, timer
-Works on Windows and Unix (no external libs).
+Cleaned version:
+- Removed duplicate/broken classes
+- Added Level.parse() to populate enemies, powerups, checkpoints
+- Fixed Projectile and Particle single definitions
+- Fixed InputCollector.snapshot() to avoid stuck keys
+- Improved pause/ESC handling and restart
+Note: I preserved your tick-scaling style (uses dt / TICK_RATE in movement)
 """
 
 import os
@@ -95,7 +94,7 @@ def clamp(v, a, b):
 
 # -------------------
 # Level representation
-# Use a list of strings, where each char represents a tile:
+# Use a list of strings; Level stores mutable rows internally
 # '#' = solid ground/platform
 # '-' = platform (single-tile)
 # 'H' = ladder
@@ -103,7 +102,7 @@ def clamp(v, a, b):
 # '*' = powerup
 # 'S' = spike (stationary hazard)
 # '.' = empty
-# 'E' in level is an enemy spawn (level loader converts)
+# 'E' = enemy spawn (converted by parser)
 # -------------------
 LEVELS = [
     [
@@ -149,61 +148,18 @@ LEVELS = [
 # -------------------
 class Level:
     def __init__(self, layout):
-        self.layout = layout
-        self.w = len(layout[0])
-        self.h = len(layout)
-        self.enemies_to_spawn = []  # Placeholder for enemy spawn points
-        self.powerups = {}  # Placeholder for powerups
-        self.checkpoints = []  # Placeholder for checkpoints
-
-    def is_ladder(self, x, y):
-        return False  # Placeholder logic
-
-    def is_solid(self, x, y):
-        return self.layout[y][x] == '#'  # Example logic for solid tiles
-
-    def is_spike(self, x, y):
-        return False  # Placeholder logic
-
-    def tile(self, x, y):
-        return self.layout[y][x]  # Return the tile character
-
-
-class Particle:
-    def __init__(self, x, y, char='*', life=0.35):
-        self.x = x
-        self.y = y
-        self.char = char
-        self.life = life
-
-    def update(self, dt):
-        self.life -= dt
-
-
-class Projectile:
-    def __init__(self, x, y, vx, owner='player'):
-        self.x = x
-        self.y = y
-        self.vx = vx
-        self.owner = owner
-
-    def update(self, dt):
-        self.x += self.vx * dt
-        self.rows = []  # Initialize rows to an empty list
-        dtws = [list(r) for r in self.rows]
+        # layout: list of strings
+        # store as mutable rows of chars for parsing
+        self.rows = [list(r) for r in layout]
         self.h = len(self.rows)
-        self.w = max(len(r) for r in self.rows)
-        # pad
-        for r in self.rows:
-            r += ['.'] * (self.w - len(r))
-        self.spawn_points = []
+        self.w = len(self.rows[0]) if self.h > 0 else 0
+        self.enemies_to_spawn = []
         self.powerups = {}  # (x,y) -> type
         self.checkpoints = set()
-        self.enemies_to_spawn = []
         self.parse()
 
     def parse(self):
-        # Convert raw markers to structures
+        """Scan rows and convert markers into runtime structures."""
         for y in range(self.h):
             for x in range(self.w):
                 c = self.rows[y][x]
@@ -211,6 +167,7 @@ class Projectile:
                     self.enemies_to_spawn.append((x, y))
                     self.rows[y][x] = '.'
                 elif c == '*':
+                    # assign a random powerup type
                     self.powerups[(x, y)] = random.choice(['jump', 'speed', 'health', 'invul'])
                     self.rows[y][x] = '.'
                 elif c == 'C':
@@ -219,12 +176,12 @@ class Projectile:
 
     def tile(self, x, y):
         if x < 0 or x >= self.w or y < 0 or y >= self.h:
-            return '#'
+            return '#'  # out-of-bounds treated as solid
         return self.rows[y][x]
 
     def is_solid(self, x, y):
         t = self.tile(x, y)
-        return t in ('#',)
+        return t == '#'
 
     def is_platform(self, x, y):
         t = self.tile(x, y)
@@ -248,19 +205,20 @@ class Particle:
 
 class Projectile:
     def __init__(self, x, y, vx, owner):
-        self.x = x
-        self.y = y
-        self.vx = vx
+        self.x = float(x)
+        self.y = float(y)
+        self.vx = float(vx)
         self.owner = owner  # 'player' or 'enemy'
         self.char = '-'
 
     def update(self, dt):
-        self.x += self.vx * dt / TICK_RATE * (PROJECTILE_SPEED)  # scale to tick granularity
+        # keep your original tick scaling behavior: scale movement by dt / TICK_RATE
+        self.x += self.vx * (dt / TICK_RATE) * PROJECTILE_SPEED
 
 class Enemy:
     def __init__(self, x, y, typ='patroller'):
-        self.x = x
-        self.y = y
+        self.x = float(x)
+        self.y = float(y)
         self.vx = 0.0
         self.vy = 0.0
         self.typ = typ
@@ -272,7 +230,6 @@ class Enemy:
         self.patrol_center = x
 
     def bbox(self):
-        # single tile enemies for now
         return int(round(self.x)), int(round(self.y))
 
     def update(self, level, dt):
@@ -287,21 +244,19 @@ class Enemy:
                 self.dir *= -1
             self.vx = self.dir * speed
         elif self.typ == 'jumper':
-            # small AI: move, sometimes jump
             if self.on_ground and random.random() < 0.04:
                 self.vy = -3.2
             self.vx = self.dir * 0.5
         elif self.typ == 'flyer':
-            # float up and down
-            self.vy = 0.8 * (0.5 - random.random())  # small float jitter
+            self.vy = 0.8 * (0.5 - random.random())
             self.vx = self.dir * 0.6
 
-        # apply physics
-        self.vy += GRAVITY * dt / TICK_RATE
+        # apply physics (use your original tick scaling)
+        self.vy += GRAVITY * (dt / TICK_RATE)
         self.vy = clamp(self.vy, -TERMINAL_V, TERMINAL_V)
 
-        newx = self.x + self.vx * dt / TICK_RATE
-        newy = self.y + self.vy * dt / TICK_RATE
+        newx = self.x + self.vx * (dt / TICK_RATE)
+        newy = self.y + self.vy * (dt / TICK_RATE)
 
         # simple collision with level solid tiles (single tile body)
         if level.is_solid(int(round(newx)), int(round(self.y))):
@@ -353,7 +308,6 @@ class Player:
     def apply_power(self, ptype):
         if ptype == 'jump':
             self.jump_mult = 1.6
-            self.invincible_timer = self.invincible_timer  # nothing else
             self.score += 50
         elif ptype == 'speed':
             self.speed_mult = 1.6
@@ -366,8 +320,7 @@ class Player:
             self.score += 75
 
     def update(self, level, input_state, dt):
-        # input_state: set of keys
-        # Horizontal movement with acceleration & friction
+        # dt: seconds since last frame. Many physics operations below use dt/TICK_RATE
         target = 0
         if 'a' in input_state:
             target -= 1
@@ -383,11 +336,11 @@ class Player:
             self.on_ladder = False
 
         if self.on_ladder:
-            # ladder vertical control
+            # ladder vertical control (move per tick scaling to maintain feel)
             if 'w' in input_state:
-                self.y -= 1 * dt / TICK_RATE
+                self.y -= 1 * (dt / TICK_RATE)
             elif 's' in input_state:
-                self.y += 1 * dt / TICK_RATE
+                self.y += 1 * (dt / TICK_RATE)
             # no gravity while on ladder
             self.vy = 0
         else:
@@ -401,7 +354,7 @@ class Player:
             self.vx = clamp(self.vx, -4 * self.speed_mult, 4 * self.speed_mult)
 
             # gravity
-            self.vy += GRAVITY * dt / TICK_RATE
+            self.vy += GRAVITY * (dt / TICK_RATE)
             self.vy = clamp(self.vy, -TERMINAL_V * 2, TERMINAL_V)
 
             # jump
@@ -416,8 +369,8 @@ class Player:
             self.dash_cooldown = 0.9
 
         # apply movement and collision
-        newx = self.x + self.vx * dt / TICK_RATE
-        newy = self.y + self.vy * dt / TICK_RATE
+        newx = self.x + self.vx * (dt / TICK_RATE)
+        newy = self.y + self.vy * (dt / TICK_RATE)
 
         # horizontal collision
         if level.is_solid(int(round(newx)), int(round(self.y))):
@@ -439,7 +392,7 @@ class Player:
         self.x = newx
         self.y = newy
 
-        # timers
+        # timers (these are in real seconds)
         if self.invincible_timer > 0:
             self.invincible_timer -= dt
             if self.invincible_timer < 0: self.invincible_timer = 0
@@ -454,10 +407,10 @@ class Player:
 # -------------------
 class Game:
     def __init__(self, raw_levels):
+        # raw_levels: list of list-of-strings (LEVELS)
         self.levels = [Level(l) for l in raw_levels]
         self.level_index = 0
         self.level = self.levels[self.level_index]
-        # spawn player at first non-solid top-left
         sp = self.find_spawn(self.level)
         self.player = Player(sp[0], sp[1])
         self.populate_enemies()
@@ -475,10 +428,10 @@ class Game:
         self.game_over = False
 
     def find_spawn(self, level):
-        # choose left-most platform top area or default
-        for y in range(level.h):
+        for y in range(level.h - 1):
             for x in range(level.w):
-                if not level.is_solid(x, y) and (level.is_solid(x, y + 1) or level.is_platform(x, y + 1)):
+                # if tile is empty and tile below is solid/platform -> spawn here
+                if not level.is_solid(x, y) and level.is_platform(x, y + 1):
                     return (x, y)
         return (1, 1)
 
@@ -486,7 +439,6 @@ class Game:
         self.enemies = []
         for sx, sy in self.level.enemies_to_spawn:
             typ = random.choice(['patroller', 'jumper', 'flyer'])
-            # spike spawn based on tile below: replace sometimes
             if random.random() < 0.08:
                 typ = 'spike'
             e = Enemy(float(sx), float(sy), typ=typ)
@@ -511,14 +463,12 @@ class Game:
         self.tick_count += 1
         self.elapsed = time.time() - self.start_time
 
-        # player update
+        # player update (passes real dt; player uses dt/TICK_RATE internally for physics)
         did_dash = self.player.update(self.level, input_state, dt)
 
         # if dashed: damage nearby enemies
         if did_dash:
-            # dash movement impulse
             self.player.vx = DASH_SPEED * self.player.facing
-            # melee hitbox
             px, py = self.player.bbox()
             hit_any = False
             for e in self.enemies:
@@ -533,36 +483,43 @@ class Game:
 
         # shooting: 'f' to shoot (if available)
         if 'f' in input_state and self.player.projectiles_remaining > 0:
-            # create projectile at player's facing side
             px, py = self.player.bbox()
             self.spawn_projectile(px + self.player.facing, py, self.player.facing, owner='player')
             self.player.projectiles_remaining -= 1
 
-        # update projectiles
+        # update projectiles (player)
         for p in list(self.projectiles):
             p.update(dt)
             tx, ty = int(round(p.x)), int(round(p.y))
             if self.level.is_solid(tx, ty) or tx < 0 or tx >= self.level.w:
-                self.projectiles.remove(p)
+                try:
+                    self.projectiles.remove(p)
+                except ValueError:
+                    pass
                 self.spawn_particle(tx, ty, '-', 0.25)
                 continue
-            # enemy collision
             for e in self.enemies:
                 ex, ey = e.bbox()
                 if e.alive and int(round(p.x)) == ex and int(round(p.y)) == ey:
                     e.alive = False
                     if p in self.projectiles:
-                        self.projectiles.remove(p)
+                        try:
+                            self.projectiles.remove(p)
+                        except ValueError:
+                            pass
                     self.player.score += 150
                     self.spawn_particle(ex, ey, 'x', 0.35)
                     break
 
-        # enemy projectiles (not used by default enemies, but support exists)
+        # enemy projectiles
         for p in list(self.enemy_projectiles):
             p.update(dt)
             tx, ty = int(round(p.x)), int(round(p.y))
             if self.level.is_solid(tx, ty) or tx < 0 or tx >= self.level.w:
-                self.enemy_projectiles.remove(p)
+                try:
+                    self.enemy_projectiles.remove(p)
+                except ValueError:
+                    pass
                 continue
             px, py = self.player.bbox()
             if int(round(p.x)) == px and int(round(p.y)) == py:
@@ -571,29 +528,30 @@ class Game:
                     self.player.invincible_timer = 2.0
                     self.player.respawn()
                 if p in self.enemy_projectiles:
-                    self.enemy_projectiles.remove(p)
+                    try:
+                        self.enemy_projectiles.remove(p)
+                    except ValueError:
+                        pass
 
         # update enemies
-        for e in self.enemies:
+        for e in list(self.enemies):
             if not e.alive:
                 continue
             e.update(self.level, dt)
             ex, ey = e.bbox()
             px, py = self.player.bbox()
             # collision with player
-            if abs(ex - px) <= 0 and abs(ey - py) <= 0:
+            if ex == px and ey == py:
                 if self.player.invincible_timer <= 0:
-                    # take damage
                     self.player.lives -= 1
                     self.player.invincible_timer = 2.0
                     self.player.respawn()
-            # spike check via level tile
+            # spike check via level tile underneath
             if self.level.is_spike(int(round(e.x)), int(round(e.y))):
                 e.alive = False
 
-        # apply gravity for player landing on spikes or falling out
-        px, py = self.player.bbox()
         # collect powerups
+        px, py = self.player.bbox()
         ppos = (px, py)
         if ppos in self.level.powerups:
             ptype = self.level.powerups.pop(ppos)
@@ -612,11 +570,7 @@ class Game:
             self.player.respawn()
 
         # remove dead enemies
-        alive = [e for e in self.enemies if e.alive]
-        if len(alive) < len(self.enemies):
-            # reward for kills (already added), but add particles
-            pass
-        self.enemies = alive
+        self.enemies = [e for e in self.enemies if e.alive]
 
         # maybe spawn some enemy projectiles randomly from flying enemies
         for e in self.enemies:
@@ -629,7 +583,7 @@ class Game:
             if pr.life <= 0:
                 try:
                     self.particles.remove(pr)
-                except:
+                except ValueError:
                     pass
 
         # update camera to follow player (scrolling)
@@ -731,7 +685,8 @@ class Game:
         print("Controls: a/d = move, w = jump/climb, s = down, f = shoot, q = dash/melee, p = pause, r = restart, ESC = quit")
 
     def restart(self):
-        self.__init__([["".join(r) for r in lvl] if isinstance(lvl, list) else lvl for lvl in LEVELS])
+        # reinitialize from global LEVELS
+        self.__init__(LEVELS)
 
 # -------------------
 # Input thread to collect keypresses into a state set
@@ -748,33 +703,19 @@ class InputCollector(threading.Thread):
         while self.running:
             k = get_key_nonblocking()
             if k:
-                # map some keys
-                if k in ('a','d','w','s','f','q','p','r'):
-                    with self.lock:
-                        # for movement: register persistent state for a little while
-                        # For simplicity, toggle pressed set for movement keys on press,
-                        # and remove them when key is not pressed (best-effort).
-                        # Because nonblocking reading doesn't give keyup events, treat most keys as instantaneous except movement.
-                        if k in ('a','d','w','s'):
-                            # add briefly
-                            self.pressed.add(k)
-                        else:
-                            # ctrl keys act as single actions: record and remove by main loop
-                            self.pressed.add(k)
-                elif ord(k) == 27:  # ESC
-                    with self.lock:
+                with self.lock:
+                    if k in ('a','d','w','s','f','q','p','r'):
+                        # add key to set (we will snapshot and clear)
+                        self.pressed.add(k)
+                    elif ord(k) == 27:  # ESC
                         self.pressed.add('esc')
-                # else ignore
             time.sleep(0.01)
 
     def snapshot(self):
+        # produce a snapshot copy and clear all collected keys
         with self.lock:
             s = set(self.pressed)
-            # clear single-action keys
-            for key in list(s):
-                if key in ('f','q','p','r','esc'):
-                    self.pressed.discard(key)
-            # movement keys remain until removed by external code (we will not remove — they are momentary)
+            self.pressed.clear()
             return s
 
     def stop(self):
@@ -802,11 +743,13 @@ def title_screen():
             return False
 
 def pause_screen():
-    print("--- PAUSED ---  press p to resume")
+    print("--- PAUSED ---  press p to resume or ESC to quit")
     while True:
         k = get_key_blocking()
         if k == 'p':
-            return
+            return None
+        if ord(k) == 27:
+            return 'quit'
 
 def main():
     if not title_screen():
@@ -837,18 +780,14 @@ def main():
                 game.paused = not game.paused
                 if game.paused:
                     game.render()
-                    print("(paused) Press 'p' to resume")
-                    # wait until unpause
-                    while True:
-                        k = get_key_blocking()
-                        if k == 'p':
-                            game.paused = False
-                            last_time = time.time()
-                            break
+                    print("(paused) Press 'p' to resume or ESC to quit")
+                    res = pause_screen()
+                    if res == 'quit':
+                        break
+                    last_time = time.time()
                 continue
 
             # Build input_state set for player continuous keys
-            # Because InputCollector doesn't handle keyups, we interpret movement keys as immediate presses (good for terminal)
             input_state = set()
             for k in inputs:
                 if k in ('a','d','w','s','f','q'):
@@ -860,13 +799,13 @@ def main():
             # render
             game.render()
 
-            # post render: clear instantaneous action keys so they act single-press
-            # (InputCollector already clears them in snapshot copy behavior)
+            # if game over, wait for r or q
             if game.game_over:
-                # wait for r or q
                 k = get_key_blocking()
                 if k == 'r':
                     game.restart()
+                    last_time = time.time()
+                    continue
                 elif k == 'q' or k == '\x1b':
                     break
 
@@ -881,4 +820,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
