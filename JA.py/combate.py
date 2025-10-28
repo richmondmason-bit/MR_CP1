@@ -107,9 +107,7 @@ else:
     print("\nThe Dire Wolf moves first!")
     player_first = False
 
-# ----------------------------
-# Main combat loop
-# ----------------------------
+
 while player["health"] > 0 and monster["health"] > 0:
     if player_first:
         result = player_turn(player, monster)
@@ -131,9 +129,7 @@ while player["health"] > 0 and monster["health"] > 0:
     print("-" * 40)
     time.sleep(1)
 
-# ----------------------------
-# End game
-# ----------------------------
+
 if player["health"] <= 0:
     print("\nYou were defeated... Game over.")
 elif monster["health"] <= 0:
