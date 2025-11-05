@@ -1,17 +1,16 @@
 import turtle
 import random
-
 wn = turtle.Screen()
 wn.title("Simple Maze Game")
 wn.bgcolor("black")
 wn.setup(width=600, height=600)
-wn.tracer(0)  
+wn.tracer(0)
 rows = 10
 cols = 10
 cell_size = 40
 pen = turtle.Turtle()
 pen.shape("square")
-pen.color("white")
+pen.color("white")e
 pen.penup()
 pen.speed(0)
 player = turtle.Turtle()
@@ -20,15 +19,17 @@ player.color("cyan")
 player.penup()
 player.speed(0)
 maze = [[1 for _ in range(cols)] for _ in range(rows)]
-y, x = 1, 1
-maze[y][x] = 0
-while (y, x) != (rows - 2, cols - 2):
-    if random.choice([True, False]) and x < cols - 2:
-        x += 1
-    elif y < rows - 2:
-        y += 1
-    maze[y][x] = 0
-for _ in range(rows * cols // 3):
+def carve_passages_from(y, x):
+    directions = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+    random.shuffle(directions)
+    for dy, dx in directions:
+        ny, nx = y + dy, x + dx
+        if 0 < ny < rows - 1 and 0 < nx < cols - 1 and maze[ny][nx] == 1:
+            maze[y + dy // 2][x + dx // 2] = 0
+            maze[ny][nx] = 0
+            carve_passages_from(ny, nx)
+carve_passages_from(1, 1)
+for _ in range(random.randint(4, 8)):
     ry = random.randint(1, rows - 2)
     rx = random.randint(1, cols - 2)
     maze[ry][rx] = 0
@@ -43,11 +44,12 @@ def draw_maze():
                 pen.color("white")
                 pen.stamp()
             elif (y, x) == (1, 1):
-                pen.color("lime") 
+                pen.color("lime")  # start
                 pen.stamp()
             elif (y, x) == (rows - 2, cols - 2):
-                pen.color("red")   
+                pen.color("red")   # end
                 pen.stamp()
+#im so smart indeed
 def move(dx, dy):
     new_x = player.xcor() + dx * cell_size
     new_y = player.ycor() + dy * cell_size
@@ -59,7 +61,9 @@ def move(dx, dy):
             win_text = turtle.Turtle()
             win_text.hideturtle()
             win_text.color("yellow")
-            win_text.write(" You reached the end!! ", align="center", font=("Arial", 16, "bold"))
+            win_text.write("You reached the end!!", align="center", font=("Arial", 16, "bold"))
+            wn.update()
+            wn.mainloop()  # stops the loop POTATO
 def up(): move(0, 1)
 def down(): move(0, -1)
 def left(): move(-1, 0)
