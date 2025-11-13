@@ -1,9 +1,9 @@
 import time
 
-# 🧾 MS LAROSE LOOK HERE — order 500 Cigarettes for a secret message!
+#  MS LAROSE LOOK HERE  order 500 Cigarettes for a secret message!
 
 menu = {
-    # 🍔 BURGERS
+
     "Classic Burger": 5.99,
     "Cheeseburger": 6.49,
     "Bacon Burger": 6.99,
@@ -23,8 +23,6 @@ menu = {
     "Breakfast Burger": 7.29,
     "Vegan Black Bean Burger": 6.49,
     "Impossible Burger": 8.49,
-
-    # 🍗 CHICKEN
     "Chicken Sandwich": 6.49,
     "Spicy Chicken Sandwich": 6.79,
     "Buffalo Chicken Sandwich": 7.29,
@@ -44,8 +42,6 @@ menu = {
     "Chicken Nachos": 6.49,
     "Chicken Parmesan Sandwich": 7.99,
     "Buffalo Chicken Pizza Slice": 3.49,
-
-    # 🌭 HOTDOGS
     "Classic Hotdog": 3.49,
     "Chili Dog": 4.49,
     "Cheese Dog": 4.29,
@@ -56,8 +52,6 @@ menu = {
     "Coney Island Dog": 5.49,
     "Bratwurst": 6.49,
     "Hotdog Combo (Fries + Drink)": 7.99,
-
-    # 🍕 PIZZA
     "Cheese Pizza": 7.99,
     "Pepperoni Pizza": 8.99,
     "BBQ Chicken Pizza": 9.49,
@@ -76,8 +70,6 @@ menu = {
     "Vegan Pizza": 9.99,
     "Extra Cheese Pizza": 9.29,
     "Deep Dish Pepperoni Pizza": 11.49,
-
-    # 🌮 MEXICAN
     "Taco": 2.49,
     "Soft Taco": 2.79,
     "Beef Taco": 2.99,
@@ -101,26 +93,11 @@ menu = {
     "Enchiladas": 7.49,
     "Tamales": 6.99,
     "Chimichanga": 7.49,
-
-    # 🍣 JAPANESE
-    "Sushi Roll": 7.99,
-    "Tempura Shrimp": 6.99,
     "Ramen Bowl": 8.49,
     "Miso Soup": 2.49,
     "Teriyaki Chicken": 8.99,
-    "Salmon Sashimi": 9.99,
-    "California Roll": 7.49,
-    "Spicy Tuna Roll": 7.99,
     "Udon Noodles": 8.29,
-    "Nigiri Combo": 9.49,
-    "Dragon Roll": 10.49,
-    "Philadelphia Roll": 8.49,
-    "Rainbow Roll": 10.49,
-    "Shrimp Tempura Roll": 9.49,
-    "Vegetable Roll": 6.99,
     "Tofu Teriyaki Bowl": 7.99,
-
-    # 🥞 BREAKFAST
     "Pancakes": 4.99,
     "Chocolate Chip Pancakes": 5.49,
     "French Toast": 4.99,
@@ -139,8 +116,6 @@ menu = {
     "Chocolate Croissant": 3.29,
     "Breakfast Platter": 7.99,
     "English Muffin": 2.49,
-
-    # 🍟 SIDES
     "Fries": 2.49,
     "Curly Fries": 2.79,
     "Onion Rings": 2.99,
@@ -156,8 +131,6 @@ menu = {
     "Mac & Cheese Bites": 4.49,
     "Cheese Curds": 4.29,
     "Mini Corn Dogs": 3.99,
-
-    # 🍰 DESSERTS & ICE CREAM (Brands + Variations)
     "Oreo Ice Cream Cup": 2.99,
     "Ben & Jerry's Chocolate Fudge Brownie": 4.99,
     "Häagen-Dazs Vanilla": 4.49,
@@ -190,8 +163,6 @@ menu = {
     "Dairy Queen Reese's Blizzard": 4.99,
     "Frosty Chocolate": 2.99,
     "Frosty Vanilla": 2.99,
-
-    # 🥤 DRINKS (Sodas, Monster, Red Bull, Coffee, Tea, Bubble Tea)
     "Coca-Cola Classic": 1.49,
     "Coca-Cola Zero Sugar": 1.49,
     "Diet Coke": 1.49,
@@ -233,17 +204,6 @@ menu = {
     "Hot Chocolate": 2.49,
     "Chai Latte": 3.99,
     "Matcha Latte": 4.29,
-    "Monster Energy Original": 3.49,
-    "Monster Energy Ultra": 3.49,
-    "Monster Energy Ultra Sunrise": 3.49,
-    "Monster Energy Ultra Red": 3.49,
-    "Monster Energy Ultra White": 3.49,
-    "Monster Energy Mango Loco": 3.49,
-    "Monster Energy Pipeline Punch": 3.49,
-    "Monster Energy Pacific Punch": 3.49,
-    "Monster Energy Rehab Lemon Tea": 3.49,
-    "Monster Energy Rehab Peach Tea": 3.49,
-    "Monster Energy Java Monster": 3.99,
     "Red Bull": 3.49,
     "Red Bull Sugarfree": 3.49,
     "Red Bull Tropical": 3.49,
@@ -263,8 +223,6 @@ menu = {
     "Protein Shake": 4.49,
     "Frappuccino": 3.99,
     "Caramel Macchiato": 4.29,
-
-    # 🚬 SECRET ITEM
     "Cigarette": 2.00
 }
 print(" WELCOME TO BURGER SHACK ULTRA ")
@@ -280,11 +238,11 @@ while True:
         qty = int(input(f"How many {item}s? "))
         order[item] = order.get(item, 0) + qty
         if item == "Cigarette" and qty >= 500:
-            print("\n🚬🚬 500 CIGARETTES ALERT 🚬🚬\n")
+            print("\n🚬🚬 500 CIGARETTES  🚬🚬\n")
             for _ in range(20):
                 print("🚬 " * 80)
                 time.sleep(0.05)
-            print("\n You really went all-in on those cigarettes \n")
+            
     else:
         print(" Not on the menu.")
 if not order:
