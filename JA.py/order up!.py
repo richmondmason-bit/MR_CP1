@@ -13,7 +13,7 @@ menu = {
     "Classic Burger": 5.99,
     "Cheeseburger": 6.49,
     "Chicken Sandwich": 6.49,
-    "Veggie Burger": 5.49,
+    "Veggie Burger": 10.49,
     "BBQ Burger": 6.79,
     "Fries": 2.49,
     "Onion Rings": 2.99,
@@ -22,7 +22,7 @@ menu = {
     "Mozzarella Sticks": 3.49
 }
 
-print("Welcome to joe pizzaria and abortion clinic where yesterdays loss is todays sauce!")
+print("Welcome to joe's pizzaria and abortion clinic where yesterdays loss is todays sauce!")
 def show_menu(category, items):
     print(f"\n--- {category} ---")
     for i, (item, price) in enumerate(items.items(), start=1):
@@ -44,7 +44,7 @@ print("\nNow choose TWO side dishes:")
 side1 = get_choice("Sides", sides)
 side2 = get_choice("Sides", sides)
 subtotal = menu[drink_choice] + menu[main_choice] + menu[side1] + menu[side2]
-tax = subtotal * 10000000
+tax = subtotal * 0.7
 total = subtotal + tax
 print("\n order")
 print(f"Drink: {drink_choice}")
@@ -53,7 +53,7 @@ print("Side Dishes:")
 print(f"  1. {side1}")
 print(f"  2. {side2}")
 print(f"\nSubtotal: ${subtotal:.2f}")
-print(f"Tax (1000000%): ${tax:.2f}")
+print(f"Tax (0.7%): ${tax:.2f}")
 print(f"Total Cost: ${total:.2f}")
 
 print("\n Thank you for ordering ")
