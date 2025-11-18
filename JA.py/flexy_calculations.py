@@ -1,4 +1,4 @@
-# MR 
+# MR period 1
 import statistics
 def flexible_calculator(*args, operation="sum"):
     if len(args) == 0:
@@ -32,15 +32,19 @@ def get_numbers_from_user():
             print("Please enter a valid number or 'done'.")
     return numbers
 def main():
-    print("Welcome to the Flexible Calculator!")
     while True:
         operation = input("\nWhich operation would you like to perform? ").lower()
         numbers = get_numbers_from_user()
+        if not numbers:
+            print("No numbers entered, please try again.")
+            continue
         print(f"\nCalculating {operation} of: {', '.join(str(n) for n in numbers)}")
         result = flexible_calculator(*numbers, operation=operation)
         print("Result:", result)
-        again = input("\nWould you like to perform another calculation? (yes/no) ").lower()
+        again = input("\nWould you like to perform another calculation?\n").strip().lower()
         if again != "yes":
             break
     print("\nThank you for using the Flexible Calculator!")
-main()
+if __name__ == "__main__":
+    main()
+    
