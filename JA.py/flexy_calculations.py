@@ -1,50 +1,78 @@
-# MR period 1
-import statistics
-def flexible_calculator(*args, operation="sum"):
-    if len(args) == 0:
-        return "Error: No numbers provided."
-    if operation == "sum":
-        return sum(args)
-    elif operation == "average":
-        return statistics.mean(args)
-    elif operation == "max":
-        return max(args)
-    elif operation == "min":
-        return min(args)
-    elif operation == "product":
-        product = 1
-        for num in args:
-            product *= num
-        return product
-    else:
-        return "Error: Unknown operation."
-def get_numbers_from_user():
-    numbers = []
+
+# - define apply_round(value, **kwargs):
+#     - get "round" from kwargs
+#     - if provided, return rounded value to that many decimals, else return value
+# - define sum_numbers(*nums, **kwargs): return apply_round(sum(nums), **kwargs)
+# - define avg_numbers(*nums, **kwargs): return apply_round(sum(nums)/len(nums), **kwargs) if any nums else None
+# - define max_number(*nums, **kwargs): return apply_round(max(nums), **kwargs) if any nums else None
+# - define min_number(*nums, **kwargs): return apply_round(min(nums), **kwargs) if any nums else None
+# - define prod_numbers(*nums, **kwargs): multiply all nums and return apply_round(product, **kwargs)
+# - build OPS mapping of operation names to functions
+# - print welcome and list available operations
+# - loop:
+#     - ask user which operation; normalize and validate against OPS
+#     - if invalid, notify and continue loop
+#     - collect numbers from user until 'done', parsing floats and handling invalid input
+#     - if no numbers entered, notify and continue loop
+#     - ask for rounding decimals (optional), validate integer input if provided
+#     - call selected operation with numbers and rounding kwargs
+#     - print result
+#     - ask if user wants to run again; break loop unless user answers "yes"
+
+def apply_round(value, **kwargs):
+    r = kwargs.get("round")
+    return round(value, int(r)) if r is not None else value
+def sum_numbers(*nums, **kwargs):
+    return apply_round(sum(nums), **kwargs)
+def avg_numbers(*nums, **kwargs):
+    return apply_round(sum(nums)/len(nums), **kwargs) if nums else None
+def max_number(*nums, **kwargs):
+    return apply_round(max(nums), **kwargs) if nums else None
+def min_number(*nums, **kwargs):
+    return apply_round(min(nums), **kwargs) if nums else None
+def prod_numbers(*nums, **kwargs):
+    p = 1
+    for n in nums: p *= n
+    return apply_round(p, **kwargs)
+OPS = {
+    "sum": sum_numbers,
+    "average": avg_numbers,
+    "max": max_number,
+    "min": min_number,
+    "product": prod_numbers,
+}
+print("Welcome to the flexy calculations!!!\n")
+print("Available flexy operations:", ", ".join(OPS.keys()))
+while True:
+    op = input("\nWhich flexy calculation do you want to calculate? ").strip().lower()
+    if op not in OPS:
+        print("Hey dummy type it right ")
+        continue
+    nums = []
     print("\nEnter numbers (type 'done' when finished):")
     while True:
-        user_input = input("Number: ")
-        if user_input.lower() == "done":
+        n = input("Number: ").strip()
+        if n.lower() == "done":
             break
         try:
-            number = float(user_input)
-            numbers.append(number)
+            nums.append(float(n))
         except ValueError:
-            print("Please enter a valid number or 'done'.")
-    return numbers
-def main():
-    while True:
-        operation = input("\nWhich operation would you like to perform? ").lower()
-        numbers = get_numbers_from_user()
-        if not numbers:
-            print("No numbers entered, please try again.")
-            continue
-        print(f"\nCalculating {operation} of: {', '.join(str(n) for n in numbers)}")
-        result = flexible_calculator(*numbers, operation=operation)
-        print("Result:", result)
-        again = input("\nWould you like to perform another calculation?\n").strip().lower()
-        if again != "yes":
-            break
-    print("\nThank you for using the Flexible Calculator!")
-if __name__ == "__main__":
-    main()
-    
+            print("STUPID")
+    if not nums:
+        print("Put numbers in you dummy")
+        continue
+    print(f"\nCalculating {op} of: {', '.join(map(str, nums))}")
+    dec = input("Round decimals? (leave blank for none): ").strip()
+    kwargs = {}
+    if dec:
+        try: kwargs["round"] = int(dec)
+        except ValueError: print("Invalid round value; ignoring")
+    result = OPS[op](*nums, **kwargs)
+    print(f"Result: {result}\n")
+    again = input("You wanna do the flexy calcualtions again? ").strip().lower()
+    if again != "yes":
+        print("Goodbye hope I flexy calculated you!")
+        break
+
+
+#MS LAROSe you must be proud of me because this one time I did pseudocode 
