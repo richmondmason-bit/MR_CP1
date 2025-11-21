@@ -1,0 +1,9 @@
+
+#Create a list of numbers with at least 20 values.
+# Use the map() function to square each value in the list.
+# Convert the map object into a list of squared numbers.
+# Loop through the numbers using an index.
+# For each index:
+#Get the original number from the numbers list.
+#Get the squared number from the squared list.
+#Print both values in a readable format.
