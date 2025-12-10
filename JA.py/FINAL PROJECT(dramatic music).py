@@ -140,7 +140,8 @@ class Player:
         self.weapons = {
             "Fists": 3,
             "Spork": 6,
-            "Eraser Blade": 7 #67 LOL
+            "Eraser Blade": 7, #67 LOL
+            "Hard textbook": 11
         }
         self.selected_weapon = "Fists"
         self.special_cooldown = 0
@@ -312,11 +313,10 @@ def combat(player, enemy):
         player.dodge_ready = True
 
         if player.hp <= 0:
-            Matrix_Print("You died...")
+            Matrix_Print("You died...LOL")
             return
-
 def shop(player):
-    Matrix_Print("=== SHOP ===")
+    Matrix_Print("SHOP")
     stock = {
         "Potion": 10,
         "Spork": 25,
@@ -361,10 +361,12 @@ def main():
         Room("Library", "Shelves of dusty books.",
              enemy={"name": "Anime nerd", "hp": 35, "max_hp": 35, "attack": 10, "special_cd": 0, "potions": 2, "xp_reward": 12},
              item="Potion"),
-
         Room("Math Class", "Textbooks and eraser dust floating.",
              enemy={"name": "Math Nerd", "hp": 60, "max_hp": 60, "attack": 12, "special_cd": 0, "potions": 2, "xp_reward": 22},
-             item="Eraser Blade")
+             item="Eraser Blade"),
+        Room("History","The most historic thing about this class is the teacher",enemy={"name":"Mr.Macinanti","hp":100,"max_hp": 100,"attack":17,"special_cd":0,"potions:":4,"xp_reward":50}),
+        
+        Room("English","The teacher's over-complicated speech with words no-one uses make your brain shrivel in despair ",enemy={"name":"Ms.Thornock","hp":125,"max_hp": 130,"attack":23,"special_cd":0,"potions:":10,"xp_reward":110}),
     ]
     while player.hp > 0:
         Matrix_Print("Rooms:")
@@ -373,7 +375,7 @@ def main():
         Matrix_Print("'shop' to enter the shop | 'status' to view status | 'quit' to exit")
         choice = input("> ").strip().lower()
         if choice == "quit":
-            Matrix_Print("Exiting...")
+            Matrix_Print("Exiting...bye bye see you later")
             return
         if choice == "shop":
             shop(player)
