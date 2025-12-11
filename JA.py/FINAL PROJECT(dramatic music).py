@@ -129,7 +129,7 @@ def roll(dice):
     return random.randint(1, dice)
 class Player:
     def __init__(self):
-        self.name = "Clint Eastwood"
+        self.name = "Clint Eastwood"#put whatever you want here for your name 
         self.level = 1
         self.xp = 0
         self.xp_to_next = 10
@@ -140,7 +140,7 @@ class Player:
         self.weapons = {
             "Fists": 3,
             "Spork": 6,
-            "Eraser Blade": 7, #67 LOL
+            "Eraser Blade": 7, #67 LOL OMG 67676767676767676767676767 IM LOSING MY MIND
             "Hard textbook": 11
         }
         self.selected_weapon = "Fists"
@@ -176,15 +176,13 @@ class Room:
             player.inventory.append(self.item)
             Matrix_Print(f"Picked up: {self.item}")
         if self.enemy and not self.completed:
-            enemy = {
-                "name": self.enemy["name"],
+            enemy = {"name": self.enemy["name"],
                 "hp": self.enemy["hp"],
                 "max_hp": self.enemy["max_hp"],
                 "attack": self.enemy["attack"],
                 "special_cd": self.enemy.get("special_cd", 0),
                 "potions": self.enemy.get("potions", 0),
-                "xp_reward": self.enemy.get("xp_reward", 0)
-            }
+                "xp_reward": self.enemy.get("xp_reward", 0)}
             combat(player, enemy)
         self.completed = True
 def enemy_turn(player, enemy):
@@ -317,11 +315,9 @@ def combat(player, enemy):
             return
 def shop(player):
     Matrix_Print("SHOP")
-    stock = {
-        "Potion": 10,
+    stock = {"Potion": 10,
         "Spork": 25,
-        "Eraser Blade": 60
-    }
+        "Eraser Blade": 60}
     Matrix_Print("Welcome. Items for sale:")
     for item, price in stock.items():
         Matrix_Print(f"{item} - {price} gold")
@@ -343,7 +339,6 @@ def shop(player):
                 Matrix_Print("Purchased Potion.")
             else:
                 if choice not in player.weapons:
-            
                     if choice == "Spork":
                         player.weapons["Spork"] = 6
                     elif choice == "Eraser Blade":
@@ -355,19 +350,12 @@ def shop(player):
 def main():
     player = Player()
     rooms = [
-        Room("Hallway", "A long dark corridor.",
-             enemy={"name": "Bully Helper", "hp": 25, "max_hp": 25, "attack": 8, "special_cd": 0, "potions": 1, "xp_reward": 8},
-             item="Spork"),
-        Room("Library", "Shelves of dusty books.",
-             enemy={"name": "Anime nerd", "hp": 35, "max_hp": 35, "attack": 10, "special_cd": 0, "potions": 2, "xp_reward": 12},
-             item="Potion"),
-        Room("Math Class", "Textbooks and eraser dust floating.",
-             enemy={"name": "Math Nerd", "hp": 60, "max_hp": 60, "attack": 12, "special_cd": 0, "potions": 2, "xp_reward": 22},
-             item="Eraser Blade"),
+        Room("Hallway", "A long dark corridor.",enemy={"name": "Bully Helper", "hp": 25, "max_hp": 25, "attack": 8, "special_cd": 0, "potions": 1, "xp_reward": 8},item="Spork"),
+        Room("Library", "Shelves of dusty books.",enemy={"name": "Anime nerd", "hp": 35, "max_hp": 35, "attack": 10, "special_cd": 0, "potions": 2, "xp_reward": 12},item="Potion"),
+        Room("Math Class", "Textbooks and eraser dust floating.",enemy={"name": "Math Nerd", "hp": 60, "max_hp": 60, "attack": 12, "special_cd": 0, "potions": 2, "xp_reward": 22},item="Eraser Blade"),
         Room("History","The most historic thing about this class is the teacher",enemy={"name":"Mr.Macinanti","hp":100,"max_hp": 100,"attack":17,"special_cd":0,"potions:":4,"xp_reward":50}),
-        
         Room("English","The teacher's over-complicated speech with words no-one uses make your brain shrivel in despair ",enemy={"name":"Ms.Thornock","hp":125,"max_hp": 130,"attack":23,"special_cd":0,"potions:":10,"xp_reward":110}),
-    ]
+        Room("Science","Her understanding of the way things work makes her an impeccable foe  ",enemy={"name":"Ms.Krueger","hp":170,"max_hp": 200,"attack":23,"special_cd":0,"potions:":15,"xp_reward":150}),]
     while player.hp > 0:
         Matrix_Print("Rooms:")
         for i, room in enumerate(rooms):
