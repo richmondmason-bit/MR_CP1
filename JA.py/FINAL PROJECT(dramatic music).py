@@ -1,12 +1,9 @@
-
-
 #FUNCTION start_matrix_intro():
     #CLEAR screen
     #START matrix rain for a few seconds
     #STOP matrix rain
     #CALL print_matrix_text("WELCOME TO THE FACILITY")
     #CALL print_matrix_text("INITIALIZING SYSTEM...")
-
 #FUNCTION start_matrix_rain(duration):
     #SET start_time = current time
 
@@ -17,101 +14,71 @@
         #BRIGHT_GREEN = "\033[38;5;46m"
         #SMALL delay
     #END WHILE
-
 #FUNCTION stop_matrix_rain():
     #CLEAR all falling characters
     #RESET cursor to top-left
-
 #FUNCTION print_matrix_text(text):
     #FOR each character in text:
-
         #CHOOSE a random vertical drop height
-
         #FOR y from 0 to drop height:
             #DRAW character at (x, y) in dim green
             #ERASE previous position
             #SHORT delay
-
         #DRAW character at final position in bright green
-
     #MOVE cursor to next line
-
 #FUNCTION main():
     #CALL start_matrix_intro()
-
     #WHILE game is running:
         #CALL hallway()
-
 #FUNCTION hallway():
    # CALL print_matrix_text("=== HALLWAY ===")
     #CALL print_matrix_text("HP: " + player.hp)
    # CALL print_matrix_text("Items: " + list_of_player_items)
-
     #SHOW list of available rooms using print_matrix_text()
-
     #INPUT player choice
-
     #IF chosen room exists:
     #    CALL that room's function
     #ELSE:
        # CALL print_matrix_text("Invalid choice.")
-
 #FUNCTION room_name():
     #CALL print_matrix_text("You entered the room.")
-
     #IF room_not_completed:
         #RUN special event (fight / item / puzzle)
         #SET room_completed = true
         #CALL print_matrix_text("Room completed.")
     #ELSE:
         #CALL print_matrix_text("Nothing new here.")
-
-
-
 #FUNCTION pickup_item(item):
     #IF player does NOT have item:
      #   ADD item to inventory
       #  CALL print_matrix_text("Picked up: " + item)
     #ELSE:
      #   CALL print_matrix_text("You already have that item.")
-
-
 #FUNCTION combat(enemy):
   #  CALL print_matrix_text("Combat started: " + enemy.name)
-
    # WHILE player HP > 0 AND enemy HP > 0:
-
     #    ASK player for choice: attack / dodge / item
-
      #   IF attack:
       #      DEAL damage to enemy
        #     CALL print_matrix_text("You strike " + enemy.name)
-
         #IF dodge:
          #   IF success:
           #      CALL print_matrix_text("You dodged the attack!")
            #     CONTINUE to next loop without enemy attacking
-
        # IF item:
         #    IF item usable:
          #       APPLY effect
           #      CALL print_matrix_text("Item used.")
            # ELSE:
             #    CALL print_matrix_text("No usable items.")
-
    #     IF enemy still alive:
     #        ENEMY attempts attack (may miss)
      #       CALL print_matrix_text(enemy attack result)
-
     #END WHILE
-
     #IF player HP <= 0:
      #   CALL print_matrix_text("You died.")
     #ELSE:
      #   CALL print_matrix_text(enemy.name + " defeated!")
-
-
-
 #IMPORTANT MESSAGE i used chatgpt to help me with the martix rain effect because i didnt know really how to implement the matrix rain i did with printing text
 import random
 import sys
@@ -127,6 +94,7 @@ def Matrix_Print(text, speed=0.01):
     sys.stdout.flush()
 def roll(dice):
     return random.randint(1, dice)
+Matrix_Print("Your grades have hit STRAIGHT d's and you must fight through the school and get to the principal to dicuss why you dont deserve these grades...")
 class Player:
     def __init__(self):
         self.name = "Clint Eastwood"#put whatever you want here for your name 
@@ -355,7 +323,13 @@ def main():
         Room("Math Class", "Textbooks and eraser dust floating.",enemy={"name": "Math Nerd", "hp": 60, "max_hp": 60, "attack": 12, "special_cd": 0, "potions": 2, "xp_reward": 22},item="Eraser Blade"),
         Room("History","The most historic thing about this class is the teacher",enemy={"name":"Mr.Macinanti","hp":100,"max_hp": 100,"attack":17,"special_cd":0,"potions:":4,"xp_reward":50}),
         Room("English","The teacher's over-complicated speech with words no-one uses make your brain shrivel in despair ",enemy={"name":"Ms.Thornock","hp":125,"max_hp": 130,"attack":23,"special_cd":0,"potions:":10,"xp_reward":110}),
-        Room("Science","Her understanding of the way things work makes her an impeccable foe  ",enemy={"name":"Ms.Krueger","hp":170,"max_hp": 200,"attack":23,"special_cd":0,"potions:":15,"xp_reward":150}),]
+        Room("Science","Her understanding of the way things work makes her an impeccable foe  ",enemy={"name":"Ms.Krueger","hp":170,"max_hp": 200,"attack":23,"special_cd":0,"potions:":15,"xp_reward":150}),
+        Room("Physics ","We have no idea what the teachers name is ..",enemy={"name":"Unknown","hp":220,"max_hp": 220,"attack":27,"special_cd":0,"potions:":15,"xp_reward":210}),
+        Room("Hallway group up area ","Students upon students crowd the hallways",enemy={"name":"Valley girl with too much make-up","hp":260,"max_hp": 260,"attack":33,"special_cd":0,"potions:":15,"xp_reward":400}),
+        Room("THE PRINCIPAL's OFFICE","His presence makes any student's self esteem crumble",enemy={"name":"THE PRINCIPAL","hp":300,"max_hp": 300,"attack":40,"special_cd":0,"potions:":15,"xp_reward":666}),
+        
+        
+        ]
     while player.hp > 0:
         Matrix_Print("Rooms:")
         for i, room in enumerate(rooms):
