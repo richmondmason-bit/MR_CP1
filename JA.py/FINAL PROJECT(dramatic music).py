@@ -109,7 +109,9 @@ class Player:
             "Fists": 3,
             "Spork": 6,
             "Eraser Blade": 7, #67 LOL OMG 67676767676767676767676767 IM LOSING MY MIND
-            "Hard textbook": 11
+            "Hard textbook": 11,
+            "table saw":40,
+            "ARMORED PERSONAL CARRIER": 1100000000000#this is a speedrunner item that sends them to the forever box
         }
         self.selected_weapon = "Fists"
         self.special_cooldown = 0
@@ -215,7 +217,7 @@ def combat(player, enemy):
             continue
         elif action == "shield":
             if not player.shield_ready:
-                Matrix_Print("Shield not ready!")
+                Matrix_Print("Shield not ready!")# i am blocking it
                 enemy_turn(player, enemy)
                 player.shield_ready = True
                 continue
