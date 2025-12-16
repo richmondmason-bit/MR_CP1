@@ -1,131 +1,84 @@
-#FUNCTION start_matrix_intro():
-    #CLEAR screen
-    #START matrix rain for a few seconds
-    #STOP matrix rain
-    #CALL print_matrix_text("WELCOME TO THE FACILITY")
-    #CALL print_matrix_text("INITIALIZING SYSTEM...")
-#FUNCTION start_matrix_rain(duration):
-    #SET start_time = current time
-
-    #WHILE current time - start_time < duration:
-        #FOR each column on screen:
-            #DRAW random green characters falling downward
-        #UPDATE screen
-        #BRIGHT_GREEN = "\033[38;5;46m"
-        #SMALL delay
-    #END WHILE
-#FUNCTION stop_matrix_rain():
-    #CLEAR all falling characters
-    #RESET cursor to top-left
-#FUNCTION print_matrix_text(text):
-    #FOR each character in text:
-        #CHOOSE a random vertical drop height
-        #FOR y from 0 to drop height:
-            #DRAW character at (x, y) in dim green
-            #ERASE previous position
-            #SHORT delay
-        #DRAW character at final position in bright green
-    #MOVE cursor to next line
-#FUNCTION main():
-    #CALL start_matrix_intro()
-    #WHILE game is running:
-        #CALL hallway()
-#FUNCTION hallway():
-   # CALL print_matrix_text("=== HALLWAY ===")
-    #CALL print_matrix_text("HP: " + player.hp)
-   # CALL print_matrix_text("Items: " + list_of_player_items)
-    #SHOW list of available rooms using print_matrix_text()
-    #INPUT player choice
-    #IF chosen room exists:
-    #    CALL that room's function
-    #ELSE:
-       # CALL print_matrix_text("Invalid choice.")
-#FUNCTION room_name():
-    #CALL print_matrix_text("You entered the room.")
-    #IF room_not_completed:
-        #RUN special event (fight / item / puzzle)
-        #SET room_completed = true
-        #CALL print_matrix_text("Room completed.")
-    #ELSE:
-        #CALL print_matrix_text("Nothing new here.")
-#FUNCTION pickup_item(item):
-    #IF player does NOT have item:
-     #   ADD item to inventory
-      #  CALL print_matrix_text("Picked up: " + item)
-    #ELSE:
-     #   CALL print_matrix_text("You already have that item.")
-#FUNCTION combat(enemy):
-  #  CALL print_matrix_text("Combat started: " + enemy.name)
-   # WHILE player HP > 0 AND enemy HP > 0:
-    #    ASK player for choice: attack / dodge / item
-     #   IF attack:
-      #      DEAL damage to enemy
-       #     CALL print_matrix_text("You strike " + enemy.name)
-        #IF dodge:
-         #   IF success:
-          #      CALL print_matrix_text("You dodged the attack!")
-           #     CONTINUE to next loop without enemy attacking
-       # IF item:
-        #    IF item usable:
-         #       APPLY effect
-          #      CALL print_matrix_text("Item used.")
-           # ELSE:
-            #    CALL print_matrix_text("No usable items.")
-   #     IF enemy still alive:
-    #        ENEMY attempts attack (may miss)
-     #       CALL print_matrix_text(enemy attack result)
-    #END WHILE
-    #IF player HP <= 0:
-     #   CALL print_matrix_text("You died.")
-    #ELSE:
-     #   CALL print_matrix_text(enemy.name + " defeated!")
-#IMPORTANT MESSAGE i used chatgpt to help me with the martix rain effect because i didnt know really how to implement the matrix rain i did with printing text
 import random
-
 print("Your grades have hit STRAIGHT D's.")
-print("Fight through the school and reach the principal and face him down for mistreatment by teachers, word of this courage to demand time from the principal has made the teachers foam for the mouth..\n")
-player_hp = 30
-player_max_hp = 30
+print("You must fight through the school and reach the principal.\n")
+player_name = "Clint Eastwood"
 player_level = 1
 player_xp = 0
 player_xp_next = 10
+player_max_hp = 30
+player_hp = 30
 player_gold = 0
-weapon_name = "Fists"
-weapon_damage = 3
 inventory = ["Potion"]
-potions = 1
+weapons = {
+    "Fists": 3,
+    "Spork": 6,
+    "Eraser Blade": 7,
+    "Hard textbook": 11
+}
+current_weapon = "Fists"
+
+special_cd = 0
+shield_ready = True
+dodge_ready = True
 rooms = [
     {
         "name": "Hallway",
         "desc": "A long dark corridor.",
-        "enemy_name": "Bully Helper",
-        "enemy_hp": 25,
-        "enemy_max_hp": 25,
-        "enemy_attack": 8,
-        "enemy_potions": 1,
-        "xp": 8,
+        "enemy": {
+            "name": "Bully Helper",
+            "hp": 25,
+            "max_hp": 25,
+            "attack": 8,
+            "potions": 1,
+            "special_cd": 0,
+            "xp": 8
+        },
+        "item": "Spork",
         "done": False
     },
     {
         "name": "Library",
         "desc": "Shelves of dusty books.",
-        "enemy_name": "Anime Nerd",
-        "enemy_hp": 35,
-        "enemy_max_hp": 35,
-        "enemy_attack": 10,
-        "enemy_potions": 2,
-        "xp": 12,
+        "enemy": {
+            "name": "Anime Nerd",
+            "hp": 35,
+            "max_hp": 35,
+            "attack": 10,
+            "potions": 2,
+            "special_cd": 0,
+            "xp": 12
+        },
+        "item": "Potion",
         "done": False
     },
     {
         "name": "Math Class",
         "desc": "Textbooks and eraser dust floating.",
-        "enemy_name": "Math Nerd",
-        "enemy_hp": 60,
-        "enemy_max_hp": 60,
-        "enemy_attack": 12,
-        "enemy_potions": 2,
-        "xp": 22,
+        "enemy": {
+            "name": "Math Nerd",
+            "hp": 60,
+            "max_hp": 60,
+            "attack": 12,
+            "potions": 2,
+            "special_cd": 0,
+            "xp": 22
+        },
+        "item": "Eraser Blade",
+        "done": False
+    },
+    {
+        "name": "THE PRINCIPAL'S OFFICE",
+        "desc": "His presence crushes your confidence.",
+        "enemy": {
+            "name": "THE PRINCIPAL",
+            "hp": 300,
+            "max_hp": 300,
+            "attack": 40,
+            "potions": 5,
+            "special_cd": 0,
+            "xp": 666
+        },
+        "item": None,
         "done": False
     }
 ]
@@ -134,62 +87,153 @@ while player_hp > 0:
     for i in range(len(rooms)):
         status = "Completed" if rooms[i]["done"] else "New"
         print(i + 1, rooms[i]["name"], "-", status)
-    choice = input("Choose room number or quit: ")
+    print("Commands: number / shop / status / quit")
+    choice = input("> ").lower()
     if choice == "quit":
         break
+    if choice == "status":
+        print("\nLevel:", player_level)
+        print("XP:", player_xp, "/", player_xp_next)
+        print("HP:", player_hp, "/", player_max_hp)
+        print("Gold:", player_gold)
+        print("Weapon:", current_weapon)
+        print("Inventory:", inventory)
+        continue
+    if choice == "shop":
+        print("\nSHOP")
+        print("Potion - 10 gold")
+        if player_gold >= 10:
+            buy = input("Buy potion? yes/no > ")
+            if buy == "yes":
+                player_gold -= 10
+                inventory.append("Potion")
+                print("Bought a potion.")
+        else:
+            print("Not enough gold.")
+        continue
     if not choice.isdigit():
         continue
-    choice = int(choice) - 1
-    if choice < 0 or choice >= len(rooms):
+    room_index = int(choice) - 1
+    if room_index < 0 or room_index >= len(rooms):
         continue
-    room = rooms[choice]
+    room = rooms[room_index]
     if room["done"]:
-        print("You've already cleared this room.")
+        print("Already completed.")
         continue
     print("\n===", room["name"], "===")
     print(room["desc"])
-    enemy_hp = room["enemy_hp"]
-    enemy_max_hp = room["enemy_max_hp"]
-    enemy_attack = room["enemy_attack"]
-    enemy_potions = room["enemy_potions"]
-    print("A", room["enemy_name"], "appears!")
+    if room["item"] is not None and room["item"] not in inventory:
+        inventory.append(room["item"])
+        if room["item"] in weapons:
+            print("Picked up weapon:", room["item"])
+        else:
+            print("Picked up:", room["item"])
+    enemy = room["enemy"]
+    enemy_hp = enemy["hp"]
+    enemy_special_cd = enemy["special_cd"]
+
+    print("A", enemy["name"], "appears!")
     while enemy_hp > 0 and player_hp > 0:
         print("\nYour HP:", player_hp, "/", player_max_hp)
-        print(room["enemy_name"], "HP:", enemy_hp, "/", enemy_max_hp)
-        print("attack / potion")
+        print(enemy["name"], "HP:", enemy_hp, "/", enemy["max_hp"])
+        print("Weapon:", current_weapon)
+        print("Actions: attack / special / dodge / shield / potion / weapon / run")
         action = input("> ")
         if action == "attack":
-            dmg = random.randint(1, 6) + weapon_damage
+            dmg = random.randint(1, 6) + weapons[current_weapon] + (player_level - 1)
             enemy_hp -= dmg
-            print("You deal", dmg)
+            print("You hit for", dmg)
+        elif action == "special":
+            if special_cd > 0:
+                print("Special on cooldown.")
+            else:
+                dmg = random.randint(5, 10) + weapons[current_weapon] * 2
+                enemy_hp -= dmg
+                special_cd = 3
+                print("SPECIAL HIT for", dmg)
+        elif action == "dodge":
+            if dodge_ready:
+                if random.randint(1, 2) == 1:
+                    print("You dodged!")
+                    dodge_ready = False
+                    special_cd = max(0, special_cd - 1)
+                    continue
+                else:
+                    print("Dodge failed.")
+                dodge_ready = False
+            else:
+                print("Dodge not ready.")
+        elif action == "shield":
+            if shield_ready:
+                reduce = random.randint(4, 7)
+                print("Shield reduces", reduce, "damage.")
+                enemy_dmg = random.randint(1, enemy["attack"])
+                enemy_dmg = max(0, enemy_dmg - reduce)
+                player_hp -= enemy_dmg
+                print("You take", enemy_dmg)
+                shield_ready = False
+                continue
+            else:
+                print("Shield not ready.")
         elif action == "potion":
-            if potions > 0:
+            if "Potion" in inventory:
                 heal = random.randint(8, 15)
                 player_hp += heal
                 if player_hp > player_max_hp:
                     player_hp = player_max_hp
-                potions -= 1
-                print("You heal", heal)
+                inventory.remove("Potion")
+                print("Healed", heal)
             else:
-                print("No potions!")
+                print("No potions.")
+        elif action == "weapon":
+            print("Weapons:")
+            for w in weapons:
+                print("-", w)
+            pick = input("> ")
+            if pick in weapons:
+                current_weapon = pick
+                print("Switched to", pick)
+        elif action == "run":
+            if random.randint(1, 2) == 1:
+                print("You escaped!")
+                break
+            else:
+                print("Failed to escape.")
         if enemy_hp <= 0:
             break
-        enemy_dmg = random.randint(1, enemy_attack)
-        player_hp -= enemy_dmg
-        print(room["enemy_name"], "hits you for", enemy_dmg)
-        if enemy_hp < enemy_max_hp // 3 and enemy_potions > 0:
+        if enemy_special_cd == 0 and random.randint(1, 4) == 1:
+            dmg = random.randint(1, enemy["attack"]) + 5
+            print(enemy["name"], "uses SPECIAL for", dmg)
+            player_hp -= dmg
+            enemy_special_cd = 3
+        else:
+            dmg = random.randint(1, enemy["attack"])
+            print(enemy["name"], "hits for", dmg)
+            player_hp -= dmg
+            enemy_special_cd = max(0, enemy_special_cd - 1)
+        if enemy_hp < enemy["max_hp"] // 3 and enemy["potions"] > 0:
             heal = random.randint(6, 12)
             enemy_hp += heal
-            enemy_potions -= 1
-            print(room["enemy_name"], "uses a potion!")
-    if player_hp > 0:
-        print("You defeated", room["enemy_name"])
-        player_xp += room["xp"]
+            enemy["potions"] -= 1
+            print(enemy["name"], "heals", heal)
+        special_cd = max(0, special_cd - 1)
+        dodge_ready = True
+        shield_ready = True
+    if enemy_hp <= 0:
+        print("You defeated", enemy["name"])
+        player_xp += enemy["xp"]
         gold = random.randint(5, 10)
         player_gold += gold
-        print("Gained", room["xp"], "XP and", gold, "gold")
+        print("Gained", enemy["xp"], "XP and", gold, "gold")
+        while player_xp >= player_xp_next:
+            player_xp -= player_xp_next
+            player_level += 1
+            player_xp_next = int(player_xp_next * 1.5)
+            player_max_hp += 5
+            player_hp = player_max_hp
+            print("LEVEL UP! Level", player_level)
         room["done"] = True
-    else:
+    if player_hp <= 0:
         print("You died.")
         break
 print("\nGame over.")
