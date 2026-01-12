@@ -1,11 +1,11 @@
 
 def Save_time_calc():
-    goal = float(input("Goal amount: "))
-    deposit = float(input("Deposit amount: "))
+    goal = float(input("goal amount: "))
+    deposit = float(input("deposit amount: "))
     def calculate_months():
         return round(goal / deposit)
     MONTHS = calculate_months()
-    print(f"It will take {MONTHS} months to save ${goal:.2f}")
+    print(f"it will take {MONTHS} months to save ${goal:.2f}")
 def tip_calc():
     bill = float(input("Bill amount: "))
     tip_percent = float(input("Tip percent: "))
@@ -16,7 +16,7 @@ def Sale_price_calc():
     original = float(input("Original price: "))
     discount = float(input("Discount (%): "))
     final_price = original * (1 - discount / 100)
-    print(f"The item now costs ${final_price:.2f}")
+    print(f"the item now costs ${final_price:.2f}")
 def budget_allocat():
     CATergories = int(input("How many budget categories? "))
     names = []
@@ -30,9 +30,9 @@ def budget_allocat():
         amount = income * percents[i] / 100
         print(f"{names[i]}: ${amount:.2f}")
 def compound_inter_calc():
-    principal = float(input("Starting amount: "))
-    rate = float(input("Interest rate: ")) / 100
-    years = int(input("How many years? "))
+    principal = float(input("starting amount: "))
+    rate = float(input("interest rate: ")) / 100
+    years = int(input("how many years? "))
     total = principal * (1 + rate) ** years
     print(f"After{years} years,you will have ${total:.2f}")
 while True:
@@ -42,7 +42,7 @@ while True:
     print("4.copmpound interest calculator")
     print("5.budget allocater")
     print("6. Exit")
-    choice = input("Choose an option: ")
+    choice = input("choose an option: ")
     if choice == "1":
         Save_time_calc()
     elif choice == "2":
