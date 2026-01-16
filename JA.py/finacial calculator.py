@@ -1,5 +1,5 @@
 
-def Save_time_calc():
+def save_time_calc():
     goal = float(input("goal amount: "))
     deposit = float(input("deposit amount: "))
     def calculate_months():
@@ -13,10 +13,10 @@ def tip_calc():
     total = bill + tip
     print(f"Tip: ${tip:.2f}, Total: ${total:.2f}")
 def Sale_price_calc():
-    original = float(input("Original price: "))
-    discount = float(input("Discount (%): "))
+    original = float(input("original price: "))
+    discount = float(input("discount (%): "))
     final_price = original * (1 - discount / 100)
-    print(f"the item now costs ${final_price:.2f}")
+    print(f"the item  costs ${final_price:.2f}")
 def budget_allocat():
     CATergories = int(input("How many budget categories? "))
     names = []
@@ -44,7 +44,7 @@ while True:
     print("6. Exit")
     choice = input("choose an option: ")
     if choice == "1":
-        Save_time_calc()
+        save_time_calc()
     elif choice == "2":
         tip_calc()
     elif choice == "3":
