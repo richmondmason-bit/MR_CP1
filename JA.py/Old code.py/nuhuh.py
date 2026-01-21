@@ -35,17 +35,12 @@ NOUNS = [
     "emotional pizza", "overthinking cupcake"
 ]
 
-# --- Favorites file ---
 FAVS_FILE = "weird_compliment_favorites.json"
-
-
 def make_compliment():
     """Generate a random weird compliment."""
     adj = random.choice(ADJECTIVES)
     noun = random.choice(NOUNS)
     return f"You are a {adj} {noun}!"
-
-
 def load_favorites():
     if os.path.exists(FAVS_FILE):
         with open(FAVS_FILE, "r", encoding="utf-8") as f:
@@ -90,8 +85,6 @@ def main():
 
         else:  # generate new compliment
             last = make_compliment()
-            print("\n✨ " + last)
-
-
+            print("\n " + last)
 if __name__ == "__main__":
     main()
