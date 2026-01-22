@@ -1,3 +1,25 @@
+# PSEUDOCODE:
+# Function 1 Set constants: alphabet, digits, default length, special characters.
+# Function 2 validate_password(pwd):
+#     If length of pwd < required length: return False
+#     If no lowercase letter in pwd: return False
+#     If no uppercase letter in pwd: return False
+#     If no digit in pwd: return False
+#     If no special character in pwd: return False
+#     Otherwise return True
+# Function 3 generate_password(length):
+#     Build a pool of allowed characters (lower, upper, digits, special)
+#     Ensure password contains at least one lowercase, one uppercase, one digit, one special
+#     Fill the remaining characters randomly from the pool
+#     Shuffle the characters and join into a string
+#     Return the generated password
+
+# Function 4 main():
+#     Loop showing menu: 1. Generate password, 2. Exit
+#     On choice 1: generate and print password
+#     On choice 2: break loop
+#     Otherwise: print "Invalid choice"
+# Function 5 Run main() in a repeating loop (as in original file)
 import random
 import string
 alphabet = "abcdefghijklmnopqrstuvwxyz"
