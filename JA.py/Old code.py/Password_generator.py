@@ -40,9 +40,23 @@ while True:
     if length < len(I_am_sigma):
         print(f"Length must be at least {len(I_am_sigma)} to include all selected types.")
         continue
-    # guarantee one character from each selected pool, fill the rest from the combined pool
-    pwd_chars = [random.choice(pool) for pool in I_am_sigma]
-    combined = "".join(I_am_sigma)
-    pwd_chars += [random.choice(combined) for _ in range(length - len(pwd_chars))]
-    random.shuffle(pwd_chars)
-    print("Generated:", "".join(pwd_chars))
+    def pick(pool):
+        return random.choice(pool)
+
+    def join_pools(pools):
+        s = ""
+        for p in pools:
+            s += p
+        return s
+
+    def gen_password(pools, length):
+        chars = []
+        for p in pools:
+            chars.append(pick(p))      # ensure each selected type appears
+        combined = join_pools(pools)
+        for _ in range(length - len(chars)):
+            chars.append(pick(combined))
+        random.shuffle(chars)
+        return "".join(chars)
+
+    print("Generated:", gen_password(I_am_sigma, length))
