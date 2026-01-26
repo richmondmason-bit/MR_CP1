@@ -1,51 +1,48 @@
 import random
 import string
-alphabet = "abcdefghijklmnopqrstuvwxyz"
-digits = "123456789"
-length = 12# Function 1 Set constants: alphabet, digits, default length, special characters.
-special_char = "!@#$%^&*-="
-def validate_password(pwd: str) -> bool:
-    if len(pwd) < length:
-#     If length of pwd < required length: return False
-        return False
-    if not any(c.islower() for c in pwd):
-        return False#     If no lowercase letter in pwd: return False
-    if not any(c.isupper() for c in pwd):
-        return False
-#     If no uppercase letter in pwd: return False
-    if not any(c.isdigit() for c in pwd):
-        return False#     If no digit in pwd: return False
-    if not any(c in special_char for c in pwd):
-        return False#     If no special character in pwd: return False
-    return True
-#     Otherwise return True
-def generate_password(length: int = length):
-    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + special_char
-    pwd = [ #Build a pool of allowed characters (lower, upper, digits, special)
-        random.choice(string.ascii_lowercase),
-        random.choice(string.ascii_uppercase),
-        random.choice(string.digits),
-        random.choice(special_char),
-    ]#Ensure password contains at least one lowercase, one uppercase, one digit, one special
-    pwd += [random.choice(chars) for _ in range(length - 4)]
-    random.shuffle(pwd)#Fill the remaining characters randomly from the pool
-    return "".join(pwd)#     Return the generated password
-#     Shuffle the characters and join into a string
-def main():
-    while True:
-        #Loop showing menu: 1. Generate password, 2. Exit
-        print("1. Generate password")
-#     On choice 1: generate and print password
-        print("2. Exit")
-        choice = input("Choice: ").strip()
-        if choice == "1":
-            pwd = generate_password()
-            print("Generated:", pwd)
- #            On choice 2: break loop
-        elif choice == "2":
-            break
-    #    Otherwise: print "Invalid choice"
-        else:
-            print("Invalid choice")
-while True:# Function 5 Run main() in a repeating loop (as in original file)
-    main()
+SPECIAL_CHAR = "!@#$%^&*-="
+DEFAULT_LENGTH = 12
+while True:
+    print("\n1. Generate password")
+    print("2. Exit")
+    choice = input("Choice: ").strip()
+    if choice == "2":
+        break
+    if choice != "1":
+        print("Invalid choice")
+        continue
+    length_str = input(f"Password length (default {DEFAULT_LENGTH}): ").strip()
+    try:
+        length = int(length_str) if length_str else DEFAULT_LENGTH
+    except ValueError:
+        print("Invalid length. Using default.")
+        length = DEFAULT_LENGTH
+    answer = input("Include lowercase letters? [yes/no]: ").strip().lower()
+    use_lower = (answer == "" or answer in ("y", "yes"))
+    answer = input("Include uppercase letters? [yes/no]: ").strip().lower()
+    use_upper = (answer == "" or answer in ("y", "yes"))
+    answer = input("Include digits? [Y/n]: ").strip().lower()
+    use_digits = (answer == "" or answer in ("y", "yes"))
+    answer = input("Include special characters? [yes/no]: ").strip().lower()
+    use_special = (answer == "" or answer in ("y", "yes"))
+    I_am_sigma = []
+    if use_lower:
+        I_am_sigma.append(string.ascii_lowercase)
+    if use_upper:
+        I_am_sigma.append(string.ascii_uppercase)
+    if use_digits:
+        I_am_sigma.append(string.digits)
+    if use_special:
+        I_am_sigma.append(SPECIAL_CHAR)
+    if not I_am_sigma:
+        print("You must enable at least one character type.")
+        continue
+    if length < len(I_am_sigma):
+        print(f"Length must be at least {len(I_am_sigma)} to include all selected types.")
+        continue
+    # guarantee one character from each selected pool, fill the rest from the combined pool
+    pwd_chars = [random.choice(pool) for pool in I_am_sigma]
+    combined = "".join(I_am_sigma)
+    pwd_chars += [random.choice(combined) for _ in range(length - len(pwd_chars))]
+    random.shuffle(pwd_chars)
+    print("Generated:", "".join(pwd_chars))
