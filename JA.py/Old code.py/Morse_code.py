@@ -81,5 +81,5 @@ def main():
 
         else:
             print("\nInvalid choice. Please select 1, 2, or 3.")
-while true:
+while True:
     main()
