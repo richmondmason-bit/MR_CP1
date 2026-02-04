@@ -1,52 +1,69 @@
-
+import secrets
 import random
 import string
-alphabet = "abcdefghijklmnopqrstuvwxyz"
-digits = "123456789"
-length = 12# Function 1 Set constants: alphabet, digits, default length, special characters.
-special_char = "!@#$%^&*-="
-def validate_password(pwd: str) -> bool:
-    if len(pwd) < length:
-#     If length of pwd < required length: return False
-        return False
-    if not any(c.islower() for c in pwd):
-        return False#     If no lowercase letter in pwd: return False
-    if not any(c.isupper() for c in pwd):
-        return False
-#     If no uppercase letter in pwd: return False
-    if not any(c.isdigit() for c in pwd):
-        return False#     If no digit in pwd: return False
-    if not any(c in special_char for c in pwd):
-        return False#     If no special character in pwd: return False
-    return True
-#     Otherwise return True
-def generate_password(length: int = length):
-    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + special_char
-    pwd = [ #Build a pool of allowed characters (lower, upper, digits, special)
-        random.choice(string.ascii_lowercase),
-        random.choice(string.ascii_uppercase),
-        random.choice(string.digits),
-        random.choice(special_char),
-    ]#Ensure password contains at least one lowercase, one uppercase, one digit, one special
-    pwd += [random.choice(chars) for _ in range(length - 4)]
-    random.shuffle(pwd)#Fill the remaining characters randomly from the pool
-    return "".join(pwd)#     Return the generated password
-#     Shuffle the characters and join into a string
+SPECIAL_CHAR = "!@#$%^&*-="
+DEFAULT_LENGTH = 12
+def Bool(prompt, default_yes=True):
+    ans = input(prompt).strip().lower()
+    if ans == "":
+        return default_yes
+    return ans in ("y", "yes")
+def User_Specify():
+    length_str = input(f"Password length (default {DEFAULT_LENGTH}): ").strip()
+    try:
+        length = int(length_str) if length_str else DEFAULT_LENGTH
+    except ValueError:
+        print("Invalid length. Using default.")
+        length = DEFAULT_LENGTH
+    use_lower = Bool("Include lowercase letters? [yes/no]: ")
+    use_upper = Bool("Include uppercase letters? [yes/no]: ")
+    use_digits = Bool("Include digits? [Y/n]: ")
+    use_special = Bool("Include special characters? [yes/no]: ")
+    return length, use_lower, use_upper, use_digits, use_special
+def generate_password(length, use_lower, use_upper, use_digits, use_special):
+    groups = []
+    if use_lower:
+        groups.append(string.ascii_lowercase)
+    if use_upper:
+        groups.append(string.ascii_uppercase)
+    if use_digits:
+        groups.append(string.digits)
+    if use_special:
+        groups.append(SPECIAL_CHAR)
+    if not groups:
+        raise ValueError("You must enable at least one character type.")
+    if length < len(groups):
+        raise ValueError(f"Length must be at least {len(groups)} to include all selected types.")
+    combined = ""
+    for g in groups:
+        combined += g
+    pwd_chars = []
+    for g in groups:
+        pwd_chars.append(secrets.choice(g))
+    remaining = length - len(pwd_chars)
+    for _ in range(remaining):
+        pwd_chars.append(secrets.choice(combined))
+    random.shuffle(pwd_chars)
+    pwd = ""
+    for ch in pwd_chars:
+        pwd += ch
+    return pwd
 def main():
     while True:
-        #Loop showing menu: 1. Generate password, 2. Exit
-        print("1. Generate password")
-#     On choice 1: generate and print password
+        print("\n1. Generate password")
         print("2. Exit")
         choice = input("Choice: ").strip()
-        if choice == "1":
-            pwd = generate_password()
-            print("Generated:", pwd)
- #            On choice 2: break loop
-        elif choice == "2":
+        if choice == "2":
             break
-    #    Otherwise: print "Invalid choice"
-        else:
+        if choice != "1":
             print("Invalid choice")
-while True:# Function 5 Run main() in a repeating loop (as in original file)
+            continue
+        length, use_lower, use_upper, use_digits, use_special = User_Specify()
+        try:
+            pwd = generate_password(length, use_lower, use_upper, use_digits, use_special)
+        except ValueError as EE:
+            print(EE)
+            continue
+        print("Generated:", pwd)
+while True:
     main()

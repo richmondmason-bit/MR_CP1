@@ -26,3 +26,4 @@ print(f"The captain gets: ${captain_gets:,.2f}")
 print(f"The first mate gets: ${first_mate_gets:,.2f}")
 print(f"Crew still needs: ${crew_still_needs:,.2f} each")
 
+hello = 1
