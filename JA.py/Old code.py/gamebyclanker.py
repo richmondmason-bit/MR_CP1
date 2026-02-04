@@ -1,365 +1,517 @@
-import pygame, math, random, time, sys, os, json
+import pygame, math, random, time, sys
 
 # ================= CONFIG =================
 W, H = 960, 720
 FPS = 60
 
-ACC_BASE = 1700
-FRICTION = 8
-MAX_SPEED = 380
+# Colors
+COL_BG = (15, 15, 20)
+COL_GRID = (25, 25, 35)
+COL_P = (0, 255, 200)       # Player
+COL_E_GRUNT = (255, 80, 50) # Basic Enemy
+COL_E_SNIPER = (255, 220, 0)# Sniper
+COL_E_BOMBER = (255, 255, 255) # Exploder
+COL_SCRAP = (180, 180, 255) # Currency
+COL_TXT = (255, 255, 255)
+COL_SHOP = (40, 40, 50)
 
-DASH_SPEED = 900
-DASH_TIME = 0.12
-DASH_CD_BASE = 0.9
+# ================= VISUALS =================
 
-PLAYER_R = 14
-ENEMY_R = 14
+class Particle:
+    def __init__(self, x, y, vx, vy, color, life, size=3, shrink=True):
+        self.x, self.y = x, y
+        self.vx, self.vy = vx, vy
+        self.color = color
+        self.life = life
+        self.max_life = life
+        self.size = size
+        self.shrink = shrink
 
-RELOAD_TIME_BASE = 1.2
+    def update(self, dt):
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+        self.life -= dt
 
-SAVE_FILE = "save.json"
-# =========================================
+    def draw(self, surface):
+        if self.life <= 0: return
+        alpha = int((self.life / self.max_life) * 255)
+        current_size = self.size * (self.life / self.max_life) if self.shrink else self.size
+        if current_size < 1: return
+        
+        s = pygame.Surface((int(current_size)*2, int(current_size)*2), pygame.SRCALPHA)
+        pygame.draw.circle(s, (*self.color, alpha), (int(current_size), int(current_size)), int(current_size))
+        surface.blit(s, (self.x - current_size, self.y - current_size))
 
-# ================= GUNS ==================
-GUNS = [
-    {"name":"Pistol","mag":12,"cd":0.25,"spd":820,"recoil":100,"spread":0,"pellets":1},
-    {"name":"SMG","mag":30,"cd":0.08,"spd":900,"recoil":70,"spread":6,"pellets":1},
-    {"name":"Shotgun","mag":6,"cd":0.7,"spd":750,"recoil":240,"spread":18,"pellets":6},
-]
-# =========================================
+class FloatingText:
+    def __init__(self, x, y, text, color=(255,255,255)):
+        self.x, self.y = x, y
+        self.text = str(text)
+        self.color = color
+        self.life = 0.8
+        self.vy = -60
 
-# ================= PERKS =================
-PERKS_COMMON = [
-    ("Health +25", "hp"),
-    ("Speed +15%", "spd"),
-    ("Reload -20%", "reload"),
-]
-PERKS_RARE = [
-    ("Dash CD -30%", "dash"),
-    ("Max HP +50", "maxhp"),
-]
-# =========================================
+    def update(self, dt):
+        self.y += self.vy * dt
+        self.life -= dt
 
-pygame.init()
-screen = pygame.display.set_mode((W, H))
-pygame.display.set_caption("FINAL ROGUELITE SHOOTER")
-clock = pygame.time.Clock()
-font = pygame.font.SysFont("consolas", 18)
-big_font = pygame.font.SysFont("consolas", 32)
+# ================= GAME ENGINE =================
 
-# ================= PLAYER =================
-px, py = W//2, H//2
-pvx = pvy = 0.0
+class Game:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((W, H))
+        self.display = pygame.Surface((W, H)) # Draw here first for screenshake
+        pygame.display.set_caption("Roguelite V5: Definitive Edition")
+        self.clock = pygame.time.Clock()
+        
+        # Fonts
+        self.font_s = pygame.font.SysFont("consolas", 16)
+        self.font_m = pygame.font.SysFont("consolas", 24, bold=True)
+        self.font_l = pygame.font.SysFont("consolas", 48, bold=True)
 
-health = 100
-max_health = 100
+        self.reset_game()
 
-acc_mult = 1.0
-reload_mult = 1.0
-dash_cd_mult = 1.0
+    def reset_game(self):
+        # Stats
+        self.wave = 1
+        self.scrap = 0
+        self.state = "PLAY" # PLAY, SHOP, GAMEOVER
+        self.shake = 0
+        
+        # Player
+        self.p = {
+            "x": W//2, "y": H//2, "vx": 0, "vy": 0,
+            "hp": 100, "max_hp": 100,
+            "spd_mult": 1.0, "dash_cd": 0, "dash_max": 0.8,
+            "gun_idx": 0, "reloading": False, "reload_timer": 0
+        }
+        
+        # Weapons
+        self.guns = [
+            {"name": "Pistol", "dmg": 25, "mag": 12, "cur": 12, "cd": 0.20, "last": 0, "auto": False, "spd": 800, "spread": 2, "pellets": 1},
+            {"name": "SMG",    "dmg": 12, "mag": 35, "cur": 35, "cd": 0.08, "last": 0, "auto": True,  "spd": 900, "spread": 8, "pellets": 1},
+            {"name": "Shotty", "dmg": 18, "mag": 6,  "cur": 6,  "cd": 0.90, "last": 0, "auto": False, "spd": 750, "spread": 25,"pellets": 6},
+        ]
 
-gun_id = 0
-gun = GUNS[gun_id]
-ammo = gun["mag"]
-reloading = False
-reload_timer = 0
-last_shot = 0
+        self.entities = {
+            "bullets": [], "e_bullets": [], "enemies": [], "particles": [], "texts": [], "scraps": []
+        }
+        
+        self.start_wave()
 
-dashing = False
-dash_timer = 0
-dash_cd = 0
+    def start_wave(self):
+        self.state = "PLAY"
+        self.entities["bullets"].clear()
+        self.entities["e_bullets"].clear()
+        
+        # Spawn logic
+        count = 5 + int(self.wave * 2.5)
+        for _ in range(count):
+            self.spawn_enemy()
 
-ult_charge = 0
-ULT_MAX = 100
-# ================= GAME ===================
-bullets = []
-enemies = []
-boss = None
+    def spawn_enemy(self):
+        # Random edge spawn
+        side = random.choice("tblr")
+        if side=="t": x, y = random.randint(0,W), -40
+        elif side=="b": x, y = random.randint(0,W), H+40
+        elif side=="l": x, y = -40, random.randint(0,H)
+        else: x, y = W+40, random.randint(0,H)
+        
+        # Enemy Types
+        roll = random.random()
+        etype = "grunt"
+        hp, spd, color = 60 + (self.wave*10), 120, COL_E_GRUNT
+        
+        if self.wave > 2 and roll < 0.2: 
+            etype = "sniper"
+            hp, spd, color = 40 + (self.wave*5), 90, COL_E_SNIPER
+        elif self.wave > 3 and roll > 0.85:
+            etype = "bomber"
+            hp, spd, color = 30 + (self.wave*5), 190, COL_E_BOMBER
 
-wave = 1
-difficulty = 1.0
-enemies_left = 0
-state = "PLAY"  # PLAY / PERK
+        self.entities["enemies"].append({
+            "x": x, "y": y, "vx": 0, "vy": 0,
+            "hp": hp, "max_hp": hp, "spd": spd,
+            "type": etype, "color": color,
+            "atk_cd": 2.0 # For snipers/bombers
+        })
 
-score = 0
-combo = 1.0
-combo_timer = 0
+    # ================= UPDATE LOOP =================
 
-perk_choices = []
+    def update(self, dt):
+        # Screen Shake Decay
+        if self.shake > 0: self.shake = max(0, self.shake - 50 * dt)
 
-# ================= META ===================
-if os.path.exists(SAVE_FILE):
-    try:
-        old_highscore = json.load(open(SAVE_FILE))["highscore"]
-    except:
-        old_highscore = 0
-else:
-    old_highscore = 0
+        # --- PARTICLES & TEXT (Always update) ---
+        for p in self.entities["particles"][:]:
+            p.update(dt)
+            if p.life <= 0: self.entities["particles"].remove(p)
+        for t in self.entities["texts"][:]:
+            t.update(dt)
+            if t.life <= 0: self.entities["texts"].remove(t)
 
-# ================= FUNCTIONS =================
-def increase_health():
-    global health
-    health = min(health+25, max_health)
+        if self.state == "PLAY":
+            self.update_play(dt)
+        elif self.state == "SHOP":
+            self.update_shop()
 
-def increase_speed():
-    global acc_mult
-    acc_mult *= 1.15
+    def update_play(self, dt):
+        keys = pygame.key.get_pressed()
+        p = self.p
+        
+        # 1. Weapon Switching & Reload
+        if keys[pygame.K_1]: p["gun_idx"] = 0; p["reloading"] = False
+        if keys[pygame.K_2]: p["gun_idx"] = 1; p["reloading"] = False
+        if keys[pygame.K_3]: p["gun_idx"] = 2; p["reloading"] = False
+        
+        if keys[pygame.K_r] and not p["reloading"]:
+             gun = self.guns[p["gun_idx"]]
+             if gun["cur"] < gun["mag"]:
+                 p["reloading"] = True
+                 p["reload_timer"] = 1.0
 
-def reduce_reload():
-    global reload_mult
-    reload_mult *= 0.8
+        if p["reloading"]:
+            p["reload_timer"] -= dt
+            if p["reload_timer"] <= 0:
+                p["reloading"] = False
+                self.guns[p["gun_idx"]]["cur"] = self.guns[p["gun_idx"]]["mag"]
 
-def reduce_dash_cd():
-    global dash_cd_mult
-    dash_cd_mult *= 0.7
+        # 2. Movement & Dash
+        acc = 1800
+        fric = 10
+        input_x = (keys[pygame.K_d] - keys[pygame.K_a])
+        input_y = (keys[pygame.K_s] - keys[pygame.K_w])
+        
+        # Dash
+        if p["dash_cd"] > 0: p["dash_cd"] -= dt
+        if keys[pygame.K_SPACE] and p["dash_cd"] <= 0 and (input_x!=0 or input_y!=0):
+            mag = math.hypot(input_x, input_y)
+            p["vx"] = (input_x/mag) * 1200
+            p["vy"] = (input_y/mag) * 1200
+            p["dash_cd"] = p["dash_max"]
+            self.shake += 5
+            # Dash particles
+            for _ in range(8):
+                self.entities["particles"].append(Particle(p["x"], p["y"], random.uniform(-50,50), random.uniform(-50,50), COL_P, 0.5))
 
-def increase_max_hp():
-    global max_health, health
-    max_health += 50
-    health = max_health
+        p["vx"] += input_x * acc * dt
+        p["vy"] += input_y * acc * dt
+        p["vx"] -= p["vx"] * fric * dt
+        p["vy"] -= p["vy"] * fric * dt
+        
+        p["x"] += p["vx"] * dt
+        p["y"] += p["vy"] * dt
+        p["x"] = max(20, min(W-20, p["x"]))
+        p["y"] = max(20, min(H-20, p["y"]))
 
-def spawn_enemy(elite=False):
-    side = random.choice("tblr")
-    if side=="t": x,y=random.randint(0,W),-30
-    if side=="b": x,y=random.randint(0,W),H+30
-    if side=="l": x,y=-30,random.randint(0,H)
-    if side=="r": x,y=W+30,random.randint(0,H)
+        # 3. Shooting
+        mouse_pressed = pygame.mouse.get_pressed()[0]
+        gun = self.guns[p["gun_idx"]]
+        if mouse_pressed and not p["reloading"] and gun["cur"] > 0:
+            now = time.time()
+            if (gun["auto"] or not hasattr(self, 'prev_mouse') or not self.prev_mouse) and now - gun["last"] >= gun["cd"]:
+                gun["last"] = now
+                gun["cur"] -= 1
+                self.shake += 3
+                
+                mx, my = pygame.mouse.get_pos()
+                base_angle = math.atan2(my - p["y"], mx - p["x"])
+                
+                # Knockback player
+                p["vx"] -= math.cos(base_angle) * 150
+                p["vy"] -= math.sin(base_angle) * 150
 
-    hp = 60 * difficulty
-    spd = 110 * difficulty
-    if elite:
-        hp *= 2
-        spd *= 1.4
+                for _ in range(gun["pellets"]):
+                    spread = math.radians(random.uniform(-gun["spread"], gun["spread"]))
+                    angle = base_angle + spread
+                    self.entities["bullets"].append({
+                        "x": p["x"], "y": p["y"],
+                        "vx": math.cos(angle) * gun["spd"],
+                        "vy": math.sin(angle) * gun["spd"],
+                        "life": 1.5, "dmg": gun["dmg"]
+                    })
+        self.prev_mouse = mouse_pressed
 
-    ability = random.choice([None,"dash","split","shield"])
-    enemies.append({"x":x,"y":y,"hp":hp,"spd":spd,"elite":elite,"ability":ability,"cd":random.uniform(1.5,3),"shield":False})
-
-def spawn_boss():
-    return {"x":W//2,"y":-80,"hp":1200*difficulty,"spd":80,"phase":1}
-
-def start_wave():
-    global enemies_left, state, boss
-    state = "PLAY"
-    enemies_left = wave * 6
-    enemies.clear()
-    bullets.clear()
-    boss = None
-
-    if wave % 5 == 0:
-        boss = spawn_boss()
-    else:
-        for _ in range(enemies_left):
-            spawn_enemy(random.random()<0.15)
-
-def start_perks():
-    global state, perk_choices
-    state = "PERK"
-    pool = PERKS_RARE if random.random()<0.25 else PERKS_COMMON
-    perk_choices = random.sample(pool, 3)
-
-def apply_perk(p):
-    if p=="hp": increase_health()
-    elif p=="spd": increase_speed()
-    elif p=="reload": reduce_reload()
-    elif p=="dash": reduce_dash_cd()
-    elif p=="maxhp": increase_max_hp()
-
-def fire(mx,my):
-    global ammo,last_shot,pvx,pvy
-    if reloading or ammo<=0: return
-    now=time.time()
-    if now-last_shot<gun["cd"]: return
-    last_shot=now
-    ammo-=1
-
-    dx,dy=mx-px,my-py
-    d=math.hypot(dx,dy)
-    if d==0: return
-    dx,dy=dx/d,dy/d
-
-    pvx -= dx*gun["recoil"]
-    pvy -= dy*gun["recoil"]
-
-    for _ in range(gun["pellets"]):
-        ang=math.atan2(dy,dx)+math.radians(random.uniform(-gun["spread"],gun["spread"]))
-        bullets.append({"x":px,"y":py,"vx":math.cos(ang)*gun["spd"],"vy":math.sin(ang)*gun["spd"],"life":2})
-
-start_wave()
-
-# ================= MAIN LOOP =================
-running=True
-while running:
-    dt = clock.tick(FPS)/1000
-
-    for e in pygame.event.get():
-        if e.type==pygame.QUIT:
-            running=False
-
-        if state=="PLAY":
-            if e.type==pygame.KEYDOWN:
-                if e.key==pygame.K_r and not reloading:
-                    reloading=True
-                    reload_timer=RELOAD_TIME_BASE*reload_mult
-                if e.key in (pygame.K_1, pygame.K_2, pygame.K_3):
-                    gun_id = e.key - pygame.K_1
-                    gun = GUNS[gun_id]
-                    ammo = gun["mag"]
-                if e.key==pygame.K_SPACE and dash_cd<=0:
-                    mag=math.hypot(pvx,pvy)
-                    if mag>0:
-                        pvx=pvx/mag*DASH_SPEED
-                        pvy=pvy/mag*DASH_SPEED
-                        dashing=True
-                        dash_timer=DASH_TIME
-                        dash_cd=DASH_CD_BASE*dash_cd_mult
-                if e.key==pygame.K_q and ult_charge>=ULT_MAX:
-                    ult_charge=0
-                    for i in range(40):
-                        a=random.random()*math.tau
-                        bullets.append({"x":px,"y":py,"vx":math.cos(a)*1000,"vy":math.sin(a)*1000,"life":1})
-
-            if e.type==pygame.MOUSEBUTTONDOWN and e.button==1:
-                fire(*pygame.mouse.get_pos())
-
-        elif state=="PERK":
-            if e.type==pygame.KEYDOWN and e.key in (pygame.K_1,pygame.K_2,pygame.K_3):
-                apply_perk(perk_choices[e.key-pygame.K_1][1])
-                wave += 1
-                difficulty += 0.25
-                start_wave()
-
-    if state=="PLAY":
-        keys=pygame.key.get_pressed()
-        ACC = ACC_BASE*acc_mult
-        pvx += (keys[pygame.K_d]-keys[pygame.K_a])*ACC*dt
-        pvy += (keys[pygame.K_s]-keys[pygame.K_w])*ACC*dt
-
-        if not dashing:
-            pvx -= pvx*FRICTION*dt
-            pvy -= pvy*FRICTION*dt
-
-        px+=pvx*dt
-        py+=pvy*dt
-        px=max(20,min(W-20,px))
-        py=max(20,min(H-20,py))
-
-        if dashing:
-            dash_timer-=dt
-            if dash_timer<=0: dashing=False
-        if dash_cd>0: dash_cd-=dt
-
-        if reloading:
-            reload_timer-=dt
-            if reload_timer<=0:
-                ammo=gun["mag"]
-                reloading=False
-
-        for b in bullets[:]:
-            b["x"]+=b["vx"]*dt
-            b["y"]+=b["vy"]*dt
-            b["life"]-=dt
-            if b["life"]<=0:
-                bullets.remove(b)
-
-        for e in enemies[:]:
-            dx,dy=px-e["x"],py-e["y"]
-            d=math.hypot(dx,dy)
-            if d>0:
-                e["x"]+=dx/d*e["spd"]*dt
-                e["y"]+=dy/d*e["spd"]*dt
-
-            # enemy abilities
-            e["cd"] -= dt
-            if e["cd"]<0: e["cd"]=0
-            if e["ability"]=="dash" and e["cd"]<=0:
-                if d>0:
-                    e["x"]+=dx/d*120
-                    e["y"]+=dy/d*120
-                    e["cd"]=2
-
-            if d<PLAYER_R+ENEMY_R:
-                health-=60*dt
-                if health<=0:
-                    running=False
-
-        if boss:
-            dx,dy=px-boss["x"],py-boss["y"]
-            d=math.hypot(dx,dy)
-            if d>0:
-                boss["x"]+=dx/d*boss["spd"]*dt
-                boss["y"]+=dy/d*boss["spd"]*dt
-            if d<40: health-=90*dt
-            if random.random()<0.03:
-                for i in range(10):
-                    a=i*math.tau/10
-                    bullets.append({"x":boss["x"],"y":boss["y"],"vx":math.cos(a)*450,"vy":math.sin(a)*450,"life":2})
-
-        for b in bullets[:]:
-            for e in enemies[:]:
-                if math.hypot(b["x"]-e["x"],b["y"]-e["y"])<ENEMY_R:
-                    e["hp"]-=30
-                    bullets.remove(b)
-                    if e["hp"]<=0:
-                        enemies.remove(e)
-                        enemies_left-=1
-                        combo_timer=2
-                        combo=min(combo+0.1,3)
-                        score+=int(10*combo)
-                        ult_charge=min(ULT_MAX, ult_charge+5)
-                        if enemies_left<=0 and not boss:
-                            start_perks()
+        # 4. Projectiles Logic
+        for b in self.entities["bullets"][:]:
+            b["x"] += b["vx"] * dt
+            b["y"] += b["vy"] * dt
+            b["life"] -= dt
+            if b["life"] <= 0: 
+                self.entities["bullets"].remove(b)
+                continue
+            
+            # Hit Enemy
+            for e in self.entities["enemies"][:]:
+                dist = math.hypot(b["x"] - e["x"], b["y"] - e["y"])
+                if dist < 20:
+                    e["hp"] -= b["dmg"]
+                    self.entities["texts"].append(FloatingText(e["x"], e["y"]-20, str(b["dmg"])))
+                    self.entities["particles"].append(Particle(b["x"], b["y"], random.uniform(-100,100), random.uniform(-100,100), e["color"], 0.4))
+                    
+                    # Push enemy
+                    e["vx"] += b["vx"] * 0.2
+                    e["vy"] += b["vy"] * 0.2
+                    
+                    if b in self.entities["bullets"]: self.entities["bullets"].remove(b)
+                    
+                    if e["hp"] <= 0:
+                        self.kill_enemy(e)
                     break
-            if boss and math.hypot(b["x"]-boss["x"],b["y"]-boss["y"])<45:
-                boss["hp"]-=25
-                bullets.remove(b)
-                if boss["hp"]<=0:
-                    boss=None
-                    score+=500
-                    ult_charge=min(ULT_MAX, ult_charge+20)
-                    start_perks()
+        
+        # Enemy Bullets (Sniper shots)
+        for b in self.entities["e_bullets"][:]:
+            b["x"] += b["vx"] * dt
+            b["y"] += b["vy"] * dt
+            # Check player hit
+            if math.hypot(b["x"]-p["x"], b["y"]-p["y"]) < 15:
+                self.damage_player(15)
+                self.entities["e_bullets"].remove(b)
+            elif not (0 <= b["x"] <= W and 0 <= b["y"] <= H):
+                self.entities["e_bullets"].remove(b)
 
-        combo_timer-=dt
-        if combo_timer<=0: combo=1.0
+        # 5. Enemies Logic
+        for e in self.entities["enemies"][:]:
+            # Physics (separation)
+            for other in self.entities["enemies"]:
+                if e == other: continue
+                dx, dy = e["x"] - other["x"], e["y"] - other["y"]
+                d = math.hypot(dx, dy)
+                if d < 30 and d > 0:
+                    e["vx"] += (dx/d) * 500 * dt
+                    e["vy"] += (dy/d) * 500 * dt
+            
+            # AI
+            dx, dy = p["x"] - e["x"], p["y"] - e["y"]
+            dist = math.hypot(dx, dy)
+            dir_x, dir_y = (dx/dist), (dy/dist) if dist > 0 else (0,0)
+            
+            if e["type"] == "grunt":
+                e["vx"] += dir_x * e["spd"] * dt * 5
+                e["vy"] += dir_y * e["spd"] * dt * 5
+            
+            elif e["type"] == "sniper":
+                target_dist = 400
+                if dist < target_dist: # Retreat
+                    e["vx"] -= dir_x * e["spd"] * dt * 3
+                    e["vy"] -= dir_y * e["spd"] * dt * 3
+                else: # Approach
+                    e["vx"] += dir_x * e["spd"] * dt * 3
+                    e["vy"] += dir_y * e["spd"] * dt * 3
+                
+                e["atk_cd"] -= dt
+                if e["atk_cd"] <= 0:
+                    e["atk_cd"] = 3.0
+                    # Fire sniper shot
+                    self.entities["e_bullets"].append({
+                        "x": e["x"], "y": e["y"],
+                        "vx": dir_x * 400, "vy": dir_y * 400
+                    })
+            
+            elif e["type"] == "bomber":
+                e["vx"] += dir_x * e["spd"] * dt * 8
+                e["vy"] += dir_y * e["spd"] * dt * 8
+                # Explode if close
+                if dist < 40:
+                    self.damage_player(40)
+                    self.shake = 20
+                    self.kill_enemy(e) # Blows self up
+                    continue
+
+            # Apply velocity & Friction
+            e["x"] += e["vx"] * dt
+            e["y"] += e["vy"] * dt
+            e["vx"] *= 0.9
+            e["vy"] *= 0.9
+
+            # Collision with Player
+            if dist < 25 and e["type"] != "bomber":
+                self.damage_player(30 * dt) # DPS contact damage
+
+        # 6. Scraps (Magnet)
+        for s in self.entities["scraps"][:]:
+            dx, dy = p["x"] - s["x"], p["y"] - s["y"]
+            dist = math.hypot(dx, dy)
+            if dist < 100:
+                s["x"] += (dx/dist) * 600 * dt
+                s["y"] += (dy/dist) * 600 * dt
+            if dist < 20:
+                self.scrap += s["val"]
+                self.entities["scraps"].remove(s)
+
+        # 7. Check Wave End
+        if not self.entities["enemies"]:
+            self.state = "SHOP"
+
+    def update_shop(self):
+        # Input handled in event loop, just waiting here
+        pass
+
+    def damage_player(self, amount):
+        self.p["hp"] -= amount
+        self.shake += 5
+        if self.p["hp"] <= 0:
+            self.state = "GAMEOVER"
+
+    def kill_enemy(self, e):
+        if e in self.entities["enemies"]: 
+            self.entities["enemies"].remove(e)
+            # Spawn Scrap
+            val = 5 if e["type"]=="grunt" else 10
+            self.entities["scraps"].append({"x": e["x"], "y": e["y"], "val": val})
+            # Death Particles
+            for _ in range(8):
+                self.entities["particles"].append(Particle(e["x"], e["y"], random.uniform(-60,60), random.uniform(-60,60), e["color"], 0.6))
 
     # ================= DRAW =================
-    screen.fill((12,12,15))
 
-    if state=="PLAY":
-        mx,my=pygame.mouse.get_pos()
-        ang=math.atan2(my-py,mx-px)
-        pygame.draw.circle(screen,(0,255,255),(int(px),int(py)),PLAYER_R)
-        pygame.draw.line(screen,(0,255,255),(px,py),(px+math.cos(ang)*20,py+math.sin(ang)*20),3)
+    def draw(self):
+        # Handle Shake offset
+        off_x = random.uniform(-self.shake, self.shake)
+        off_y = random.uniform(-self.shake, self.shake)
+        
+        self.display.fill(COL_BG)
+        
+        # Grid
+        for x in range(0, W, 50): pygame.draw.line(self.display, COL_GRID, (x,0), (x,H))
+        for y in range(0, H, 50): pygame.draw.line(self.display, COL_GRID, (0,y), (W,y))
+        
+        # Scraps
+        for s in self.entities["scraps"]:
+            pygame.draw.circle(self.display, COL_SCRAP, (int(s["x"]), int(s["y"])), 5)
 
-        for b in bullets:
-            pygame.draw.circle(screen,(255,255,0),(int(b["x"]),int(b["y"])),3)
-        for e in enemies:
-            col=(255,50,50) if e["elite"] else (255,120,60)
-            pygame.draw.circle(screen,col,(int(e["x"]),int(e["y"])),ENEMY_R+3 if e["elite"] else ENEMY_R)
-            if e["shield"]:
-                pygame.draw.circle(screen,(80,180,255),(int(e["x"]),int(e["y"])),ENEMY_R+6,2)
-        if boss:
-            pygame.draw.circle(screen,(180,60,220),(int(boss["x"]),int(boss["y"])),45)
+        # Enemies
+        for e in self.entities["enemies"]:
+            # Draw flash if bomber
+            col = e["color"]
+            if e["type"] == "bomber" and (time.time() % 0.2 < 0.1): col = (255, 100, 100)
+            pygame.draw.circle(self.display, col, (int(e["x"]), int(e["y"])), 15)
+            # Health bar above enemy
+            if e["hp"] < e["max_hp"]:
+                pygame.draw.rect(self.display, (255,0,0), (e["x"]-15, e["y"]-25, 30, 4))
+                pygame.draw.rect(self.display, (0,255,0), (e["x"]-15, e["y"]-25, 30*(e["hp"]/e["max_hp"]), 4))
 
-        hud = font.render(
-            f"Wave:{wave}  HP:{int(health)}/{max_health}  Gun:{gun['name']}  Ammo:{ammo}/{gun['mag']}  Combo x{combo:.1f}  Score:{score}  ULT:{int(ult_charge)}%",
-            True,(220,220,220)
-        )
-        screen.blit(hud,(10,10))
-    else:
-        title=big_font.render("CHOOSE A PERK",True,(255,255,255))
-        screen.blit(title,(W//2-160,120))
-        for i,p in enumerate(perk_choices):
-            t=font.render(f"{i+1}. {p[0]}",True,(200,200,200))
-            screen.blit(t,(W//2-120,200+i*40))
+        # Player
+        px, py = int(self.p["x"]), int(self.p["y"])
+        pygame.draw.circle(self.display, COL_P, (px, py), 15)
+        
+        # Weapons (Visual Aim Line)
+        mx, my = pygame.mouse.get_pos()
+        angle = math.atan2(my - self.p["y"], mx - self.p["x"])
+        pygame.draw.line(self.display, COL_P, (px, py), (px + math.cos(angle)*25, py + math.sin(angle)*25), 3)
 
-    pygame.display.flip()
+        # Bullets
+        for b in self.entities["bullets"]:
+            pygame.draw.circle(self.display, (255, 255, 150), (int(b["x"]), int(b["y"])), 3)
+        for b in self.entities["e_bullets"]:
+            pygame.draw.circle(self.display, (255, 50, 50), (int(b["x"]), int(b["y"])), 5)
 
-# ================= SAVE ON EXIT =================
-try:
-    data = {"highscore": max(score, old_highscore)}
-    json.dump(data, open(SAVE_FILE,"w"))
-except:
-    pass
+        # Particles & Text
+        for p in self.entities["particles"]: p.draw(self.display)
+        for t in self.entities["texts"]:
+            img = self.font_m.render(t.text, True, t.color)
+            self.display.blit(img, (t.x - img.get_width()//2, t.y))
 
-pygame.quit()
-sys.exit()
+        # HUD
+        self.draw_hud()
+
+        if self.state == "SHOP": self.draw_shop_ui()
+        if self.state == "GAMEOVER": self.draw_gameover()
+
+        # Blit to screen with shake
+        self.screen.blit(self.display, (off_x, off_y))
+        pygame.display.flip()
+
+    def draw_hud(self):
+        # HP Bar
+        pygame.draw.rect(self.display, (50,0,0), (20, 20, 200, 20))
+        pygame.draw.rect(self.display, (255,50,50), (20, 20, 200 * max(0, self.p["hp"]/self.p["max_hp"]), 20))
+        pygame.draw.rect(self.display, (255,255,255), (20, 20, 200, 20), 2)
+        
+        # Scrap Count
+        txt_scrap = self.font_m.render(f"SCRAP: {self.scrap}", True, COL_SCRAP)
+        self.display.blit(txt_scrap, (20, 50))
+        
+        # Ammo
+        g = self.guns[self.p["gun_idx"]]
+        col = (255, 255, 255) if not self.p["reloading"] else (255, 0, 0)
+        txt = f"{g['name']}: {g['cur']}/{g['mag']}"
+        if self.p["reloading"]: txt = "RELOADING..."
+        img = self.font_m.render(txt, True, col)
+        self.display.blit(img, (20, H - 40))
+        
+        # Dash cooldown
+        if self.p["dash_cd"] > 0:
+            pct = self.p["dash_cd"] / self.p["dash_max"]
+            pygame.draw.rect(self.display, (0, 200, 255), (self.p["x"]-20, self.p["y"]+25, 40*(1-pct), 4))
+
+    def draw_shop_ui(self):
+        overlay = pygame.Surface((W, H))
+        overlay.set_alpha(200)
+        overlay.fill((0,0,0))
+        self.display.blit(overlay, (0,0))
+        
+        title = self.font_l.render("SHOP - WAVE COMPLETE", True, COL_SCRAP)
+        self.display.blit(title, (W//2 - title.get_width()//2, 100))
+        
+        opts = [
+            "[1] Repair 30 HP ($20)",
+            "[2] Max HP +20   ($50)",
+            "[3] Damage +10%  ($60)",
+            "[SPACE] NEXT WAVE"
+        ]
+        
+        for i, txt in enumerate(opts):
+            color = (255, 255, 255)
+            if "$20" in txt and self.scrap < 20: color = (100, 100, 100)
+            if "$50" in txt and self.scrap < 50: color = (100, 100, 100)
+            if "$60" in txt and self.scrap < 60: color = (100, 100, 100)
+            
+            r = self.font_m.render(txt, True, color)
+            self.display.blit(r, (W//2 - 150, 250 + i*50))
+
+    def draw_gameover(self):
+        overlay = pygame.Surface((W, H))
+        overlay.set_alpha(230)
+        overlay.fill((20,0,0))
+        self.display.blit(overlay, (0,0))
+        
+        t1 = self.font_l.render("YOU DIED", True, (255,0,0))
+        t2 = self.font_m.render(f"Reached Wave {self.wave}", True, (200,200,200))
+        t3 = self.font_s.render("Press [R] to Restart", True, (255,255,255))
+        
+        self.display.blit(t1, (W//2 - t1.get_width()//2, H//2 - 50))
+        self.display.blit(t2, (W//2 - t2.get_width()//2, H//2 + 10))
+        self.display.blit(t3, (W//2 - t3.get_width()//2, H//2 + 60))
+
+    def run(self):
+        while True:
+            dt = self.clock.tick(FPS) / 1000.0
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT: sys.exit()
+                
+                if event.type == pygame.KEYDOWN:
+                    if self.state == "GAMEOVER" and event.key == pygame.K_r:
+                        self.reset_game()
+                    
+                    elif self.state == "SHOP":
+                        if event.key == pygame.K_1 and self.scrap >= 20:
+                            self.scrap -= 20
+                            self.p["hp"] = min(self.p["hp"] + 30, self.p["max_hp"])
+                        elif event.key == pygame.K_2 and self.scrap >= 50:
+                            self.scrap -= 50
+                            self.p["max_hp"] += 20
+                            self.p["hp"] += 20
+                        elif event.key == pygame.K_3 and self.scrap >= 60:
+                            self.scrap -= 60
+                            for g in self.guns: g["dmg"] *= 1.1
+                        elif event.key == pygame.K_SPACE:
+                            self.wave += 1
+                            self.start_wave()
+
+            self.update(dt)
+            self.draw()
+
+if __name__ == "__main__":
+    Game().run()
