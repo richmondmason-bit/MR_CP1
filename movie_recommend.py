@@ -5,12 +5,12 @@ import sys
 FILENAME = "Movies list - Sheet1 (1) (1).csv"
 
 def load_data(filename):
-    """Loads CSV and normalizes data into a list of dictionaries."""
+    """Loads CSV data into a list of dictionaries."""
     movies = []
     
     if not os.path.exists(filename):
         print(f"[Error] File '{filename}' not found.")
-        print("Please make sure the CSV file is in the same folder as this script.")
+        print("Please make sure the CSV file exists")
         return []
 
     try:
