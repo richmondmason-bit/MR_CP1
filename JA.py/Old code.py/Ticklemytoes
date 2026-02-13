@@ -1,0 +1,71 @@
+import random
+
+def print_board(board):
+    print(f"\n {board[0]} | {board[1]} | {board[2]} ")
+    print("---|---|---")
+    print(f" {board[3]} | {board[4]} | {board[5]} ")
+    print("---|---|---")
+    print(f" {board[6]} | {board[7]} | {board[8]} \n")
+
+def check_winner(board, player):
+    win_conditions = [
+        (0, 1, 2), (3, 4, 5), (6, 7, 8),
+        (0, 3, 6), (1, 4, 7), (2, 5, 8),
+        (0, 4, 8), (2, 4, 6)
+    ]
+    
+    for a, b, c in win_conditions:
+        if board[a] == player and board[b] == player and board[c] == player:
+            return True
+    return False
+
+def is_board_full(board):
+    return " " not in board
+
+def get_player_move(board, player):
+    while True:
+        try:
+            position = int(input(f"Player {player}, enter a position (1-9): ")) - 1
+            if 0 <= position <= 8:
+                if board[position] == " ":
+                    return position
+                else:
+                    print("That spot is already taken! Try again.")
+            else:
+                print("Please enter a number between 1 and 9.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+def get_bot_move(board):
+    possible_moves = [i for i, x in enumerate(board) if x == " "]
+    return random.choice(possible_moves)
+
+def play_game():
+    board = [" " for _ in range(9)]
+    current_player = "X"
+    
+    print("Welcome to Tic Tac Toe! You are X, Bot is O.")
+    print_board(board)
+
+    while True:
+        if current_player == "X":
+            position = get_player_move(board, current_player)
+        else:
+            print("Bot is thinking...")
+            position = get_bot_move(board)
+
+        board[position] = current_player
+        print_board(board)
+        
+        if check_winner(board, current_player):
+            winner = "You" if current_player == "X" else "Bot"
+            print(f"Congratulations! {winner} wins!")
+            break
+        
+        if is_board_full(board):
+            print("It's a draw!")
+            break
+        
+        current_player = "O" if current_player == "X" else "X"
+
+play_game()
