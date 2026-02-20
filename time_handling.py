@@ -1,4 +1,4 @@
 import datetime
 
-def get_now():
+def get_time():
     return datetime.datetime.now().ctime()
