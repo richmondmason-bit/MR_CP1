@@ -1,4 +1,4 @@
-import time_handling
+import WordCounter.time_handling as time_handling
 
 def get_file_data(filename):
     """Reads the file and only counts words on lines starting with '>'."""

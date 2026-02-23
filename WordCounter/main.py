@@ -1,4 +1,4 @@
-import file_handling
+import WordCounter.file_handling as file_handling
 
 def main():
     print("--- Document Log Manager ---")
