@@ -1,42 +1,56 @@
 import turtle
 
-def midpoint(a, b):
-    return ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
-
-def draw_triangle(t, p1, p2, p3):
-    t.penup()
-    t.goto(p1)
-    t.pendown()
-    t.begin_fill()
-    t.goto(p1)
-    t.goto(p3)
-    t.goto(p2)
-    t.end_fill()
-
-def sierpinski(t, p1, p2, p3, depth):
+def sierpinski(size, depth):
     if depth == 0:
-        draw_triangle(t, p1, p2, p3)
-        return
-    m12 = midpoint(p1, p2)
-    m23 = midpoint(p2, p3)
-    m31 = midpoint(p3, p1)
-    sierpinski(t, p1, m12, m31, depth - 1)
-    sierpinski(t, m12, p2, m23, depth - 1)
-    sierpinski(t, m31, m23, p3, depth - 1)
-
-
+        t.begin_fill()
+        for i in range(3):
+            t.forward(size)
+            t.left(120)
+        t.end_fill()
+    else:
+        sierpinski(size / 2, depth - 1)
+        t.penup()
+        t.forward(size / 2)
+        t.pendown()
+        t.pendown()
+        sierpinski(size / 2, depth - 1)
+        t.penup()
+        t.backward(size / 2)
+        t.left(60)
+        t.forward(size / 2)
+        t.right(60)
+        t.pendown()
+        sierpinski(size / 2, depth - 1)
+        t.penup()
+        t.left(60)
+        t.backward(size / 2)
+        t.right(60)
+        t.pendown()
 
 screen = turtle.Screen()
-screen.title("Sierpinski Triangle / Triforce")
+screen.title("Triforce")
 screen.bgcolor("black")
+thickness_input = screen.textinput(
+    "Pen thickness amount",
+    "Change the amount of thickness\nLeave blank for default: 1"
+)
+if thickness_input is None or thickness_input.strip() == "":
+    turtle.pensize(thickness)
+else:
+    try:
+        thickness = int(thickness_input)
+        if thickness < 1 or thickness > 100:
+            thickness = 1
+    except ValueError:
+        thickness = 1
 
 
 depth_input = screen.textinput(
     "Recursion amount",
-    "Change the amount of recursion 1-5\nLeave blank for default: 4"
+    "Change the amount of recursion\nLeave blank for default: 4"
 )
 if depth_input is None or depth_input.strip() == "":
-    depth = 7
+    depth = 4
 else:
     try:
         depth = int(depth_input.strip())
@@ -44,7 +58,6 @@ else:
             depth = 4
     except ValueError:
         depth = 4
-
 
 tri_input = screen.textinput(
     "Triforce Colors",
@@ -60,7 +73,6 @@ else:
         pen_color = fill_color = parts[0]
     else:
         pen_color, fill_color = parts[0], parts[1]
-
 
 bg_input = screen.textinput(
     "Background Colors",
@@ -81,17 +93,17 @@ else:
         screen.bgcolor(parts[0])
         fill_color = parts[1]
 
-
 t = turtle.Turtle()
 t.speed(0)
 t.pencolor(pen_color)
 t.fillcolor(fill_color)
 
 
+t.penup()
+t.goto(-200, -150)
+t.pendown()
 
-sierpinski(t, (-250, -200), (0, 250), (250, -200), depth)
+sierpinski(400, depth)
 
 screen.update()
-screen.tracer(1, 10)   
-
 screen.exitonclick()
