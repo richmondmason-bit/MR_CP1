@@ -30,6 +30,7 @@ def sierpinski(size, depth):
 screen = turtle.Screen()
 screen.title("Triforce")
 screen.bgcolor("black")
+thickness = 1
 thickness_input = screen.textinput(
     "Pen thickness amount",
     "Change the amount of thickness\nLeave blank for default: 1"
@@ -43,6 +44,7 @@ else:
             thickness = 1
     except ValueError:
         thickness = 1
+    turtle.pensize(thickness)
 
 
 depth_input = screen.textinput(
@@ -61,7 +63,7 @@ else:
 
 tri_input = screen.textinput(
     "Triforce Colors",
-    "Enter pen color and fill color separated by a comma (cyan, blue).\nLeave blank for defaults."
+    "Enter pen color and fill color separated by a comma.\nLeave blank for defaults."
 )
 if tri_input is None or tri_input.strip() == "":
     pen_color, fill_color = "cyan", "blue"
@@ -106,4 +108,3 @@ t.pendown()
 sierpinski(400, depth)
 
 screen.update()
-screen.exitonclick()
